@@ -1,0 +1,43 @@
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+
+const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const page = await browser.newPage({viewport:{width:1440,height:1100}});
+const errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+try {
+ await page.goto('http://127.0.0.1:8000');
+ await page.getByLabel('Choose a synthetic identity').selectOption('north-engineer');
+ await page.getByRole('button',{name:'Enter workspace'}).click();
+ await page.getByRole('heading',{name:'Everything connected. Clearly.'}).waitFor();
+ await page.getByRole('button',{name:'Run comparison'}).click();
+ await page.getByText('Approval basis differs',{exact:true}).waitFor();
+ assert.equal(await page.locator('tbody tr').count(),5);
+ await mkdir('../.local/screenshots',{recursive:true});
+ await page.screenshot({path:'../.local/screenshots/dashboard.png',fullPage:true});
+ await page.getByRole('button',{name:'Approvals',exact:true}).click();
+ await page.getByRole('button',{name:'Create preview'}).click();
+ await page.getByRole('status').waitFor();
+ await page.getByLabel('Test identity').selectOption('north-approver');
+ await page.getByRole('button',{name:'Approve preview'}).first().click();
+ await page.getByText('Exact preview approved. No execution occurred.').waitFor();
+ await page.getByLabel('Test identity').selectOption('north-viewer');
+ assert.equal(await page.getByRole('button',{name:'Run comparison'}).count(),0);
+ await page.getByRole('button',{name:'Overview',exact:true}).click();
+ await page.getByText('Approval basis differs',{exact:true}).waitFor();
+ await page.getByLabel('Test identity').selectOption('south-viewer');
+ await page.getByText('Comparison has not been run. Unknown does not mean healthy.').waitFor();
+ await page.getByLabel('Test identity').selectOption('north-owner');
+ await page.getByRole('button',{name:'Administration',exact:true}).click();
+ await page.getByLabel('Role for north-viewer').selectOption('engineer');
+ await page.getByText('Role updated; permissions are rechecked on every request.').waitFor();
+ await page.getByLabel('Role for north-viewer').selectOption('viewer');
+ await page.getByText('Role updated; permissions are rechecked on every request.').waitFor();
+ await page.getByRole('button',{name:'Overview',exact:true}).click();
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:'../.local/screenshots/mobile.png',fullPage:true});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
+ assert.deepEqual(errors,[]);
+ console.log('Browser smoke passed: comparison, approval, role restrictions, tenant isolation, membership administration, mobile layout; no JavaScript errors.');
+} finally {await browser.close();}

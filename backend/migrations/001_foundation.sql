@@ -1,0 +1,11 @@
+CREATE TABLE tenants(id TEXT PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE users(id TEXT PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE memberships(tenant_id TEXT REFERENCES tenants(id), user_id TEXT REFERENCES users(id), role TEXT NOT NULL, PRIMARY KEY(tenant_id,user_id));
+CREATE TABLE projects(id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL REFERENCES tenants(id), name TEXT NOT NULL, UNIQUE(tenant_id,id));
+CREATE TABLE project_access(tenant_id TEXT NOT NULL,user_id TEXT NOT NULL,project_id TEXT NOT NULL,PRIMARY KEY(tenant_id,user_id,project_id),FOREIGN KEY(tenant_id,user_id) REFERENCES memberships(tenant_id,user_id),FOREIGN KEY(tenant_id,project_id) REFERENCES projects(tenant_id,id));
+CREATE TABLE connections(id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,project_id TEXT NOT NULL,provider TEXT NOT NULL,name TEXT NOT NULL,status TEXT NOT NULL,secret_ciphertext TEXT,FOREIGN KEY(tenant_id,project_id) REFERENCES projects(tenant_id,id));
+CREATE TABLE documents(id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,project_id TEXT NOT NULL,provider TEXT NOT NULL,number TEXT NOT NULL,title TEXT NOT NULL,revision TEXT,status TEXT NOT NULL,FOREIGN KEY(tenant_id,project_id) REFERENCES projects(tenant_id,id));
+CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,tenant_id TEXT NOT NULL,expires INTEGER NOT NULL,FOREIGN KEY(tenant_id,user_id) REFERENCES memberships(tenant_id,user_id));
+CREATE TABLE comparisons(id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,project_id TEXT NOT NULL,created TEXT NOT NULL,result TEXT NOT NULL,FOREIGN KEY(tenant_id,project_id) REFERENCES projects(tenant_id,id));
+CREATE TABLE proposals(id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,project_id TEXT NOT NULL,requested_by TEXT NOT NULL,payload TEXT NOT NULL,digest TEXT NOT NULL,status TEXT NOT NULL,approved_by TEXT,FOREIGN KEY(tenant_id,project_id) REFERENCES projects(tenant_id,id));
+CREATE TABLE audit(id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,project_id TEXT,actor TEXT NOT NULL,action TEXT NOT NULL,detail TEXT NOT NULL,created TEXT NOT NULL);
