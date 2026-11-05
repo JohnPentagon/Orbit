@@ -23,6 +23,8 @@ The launcher uses Windows PowerShell with an execution-policy override for that 
 
 No real account registration occurs. Do not enter production credentials in the local demo.
 
+For the new multi-field editor and synthetic handover flow, follow **docs/INTEGRATION_PROFILES.md**. Start with Northstar engineer → Integration profiles, then use an approver identity for the separate review steps. C-005 is the simplest eligible document for a synthetic manifest. No files are actually transferred.
+
 ## Stop and start again
 
 Press **Ctrl+C** in the launcher window to stop ORBIT. Double-click `Run-ORBIT.cmd` to start again. The launcher only stops its own server process. If a previous run remains active, close it before restarting. Your local synthetic state is retained under `.local`.

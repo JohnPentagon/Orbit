@@ -77,8 +77,8 @@ def create_app(db_path=None, demo=None):
         c.execute("CREATE TABLE IF NOT EXISTS schema_migrations(version TEXT PRIMARY KEY)")
         for migration in sorted((ROOT / "backend/migrations").glob("*.sql")):
             if not c.execute("SELECT 1 FROM schema_migrations WHERE version=?", (migration.name,)).fetchone():
-                c.executescript(migration.read_text())
-                c.execute("INSERT INTO schema_migrations VALUES(?)", (migration.name,))
+                version = migration.name.replace("'", "''")
+                c.executescript("BEGIN IMMEDIATE;\n" + migration.read_text() + f"\nINSERT INTO schema_migrations VALUES('{version}');\nCOMMIT;")
         if not c.execute("SELECT 1 FROM tenants").fetchone():
             for tenant, name, project in [("north", "Northstar Construction", "harbour"), ("south", "Southbank Estates", "riverside")]:
                 c.execute("INSERT INTO tenants VALUES(?,?)", (tenant, name))
@@ -89,12 +89,12 @@ def create_app(db_path=None, demo=None):
                     c.execute("INSERT INTO memberships VALUES(?,?,?)", (tenant, user, role))
                     c.execute("INSERT INTO project_access VALUES(?,?,?)", (tenant, user, project))
                 for provider in ["forma", "redeye"]:
-                    c.execute("INSERT INTO connections VALUES(?,?,?,?,?,?,NULL)", (f"{tenant}-{provider}", tenant, project, provider, "Synthetic " + provider.title(), "synthetic"))
+                    c.execute("INSERT INTO connections(id,tenant_id,project_id,provider,name,status,secret_ciphertext) VALUES(?,?,?,?,?,?,NULL)", (f"{tenant}-{provider}", tenant, project, provider, "Synthetic " + provider.title(), "synthetic"))
                 samples = [("C-001", "Ground floor plan", "P01", "approved", "P01", "approved"), ("C-002", "Structural general arrangement", "P03", "draft", "P02", "approved"), ("C-003", "Fire strategy", "C02", "approved", "C01", "approved"), ("C-004", "Asset handover schedule", None, "approved", "P01", "approved")]
                 for number, title, lr, ls, rr, rs in samples:
                     for provider, rev, state in [("forma", lr, ls), ("redeye", rr, rs)]:
-                        c.execute("INSERT INTO documents VALUES(?,?,?,?,?,?,?,?)", (str(uuid4()), tenant, project, provider, number, title, rev, state))
-                c.execute("INSERT INTO documents VALUES(?,?,?,?,?,?,?,?)", (str(uuid4()), tenant, project, "forma", "C-005", "Drainage layout", "P01", "approved"))
+                        c.execute("INSERT INTO documents(id,tenant_id,project_id,provider,number,title,revision,status,connection_id) VALUES(?,?,?,?,?,?,?,?,?)", (str(uuid4()), tenant, project, provider, number, title, rev, state, f"{tenant}-{provider}"))
+                c.execute("INSERT INTO documents(id,tenant_id,project_id,provider,number,title,revision,status,connection_id) VALUES(?,?,?,?,?,?,?,?,?)", (str(uuid4()), tenant, project, "forma", "C-005", "Drainage layout", "P01", "approved", f"{tenant}-forma"))
 
     key_path = path.parent / "vault.key"
     if not key_path.exists():
@@ -102,7 +102,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.1.0")
+    app = FastAPI(title="ORBIT foundation", version="0.2.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -255,7 +255,7 @@ def create_app(db_path=None, demo=None):
             if not row:
                 raise HTTPException(404, "Connection not available")
             project_check(c, who, row["project_id"])
-            c.execute("UPDATE connections SET secret_ciphertext=? WHERE id=? AND tenant_id=?", (vault.encrypt(body.secret.encode()).decode(), connection, who["tenant_id"]))
+            c.execute("UPDATE connections SET secret_ciphertext=?,generation=generation+1 WHERE id=? AND tenant_id=?", (vault.encrypt(body.secret.encode()).decode(), connection, who["tenant_id"]))
             audit(c, who, "credential.replaced", row["project_id"], "Encrypted local development vault; live access disabled")
         return {"credential_present": True, "live_access": False}
 
@@ -298,6 +298,9 @@ def create_app(db_path=None, demo=None):
                 raise HTTPException(409, "Proposal changed during approval; reload the preview")
             audit(c, who, "mapping.approved", project, row["digest"])
         return {"status": "approved", "executed": False, "message": "Recorded design approval only; no mapping or vendor write executed"}
+
+    from backend.integrations import register_integrations
+    register_integrations(app, db, identity, permit, project_check, audit, now)
 
     dist = ROOT / "frontend/dist"
     if dist.exists():

@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+New: [project/connection integration profiles and handover-preview walkthrough](docs/INTEGRATION_PROFILES.md). Multi-field mappings, immutable versions, separate profile approval and fixed synthetic handover manifests now work. These previews transfer zero files; live transfer remains disabled.
+
 - Responsive React/TypeScript portal: overview, comparisons, connections/catalogue, approval records, audit and organisation access administration.
 - FastAPI endpoints with server-side action permissions, tenant/project scoping and composite database foreign keys.
 - Five test roles per organisation: owner, engineer, approver, viewer, auditor; session role/project revocation checked against current database state.
@@ -58,6 +60,7 @@ cd /workspace/Orbit
 cd frontend
 npm run build
 node smoke.mjs
+node integration-smoke.mjs
 ```
 
 Browser smoke requires the server above running and Chromium at `/usr/bin/chromium`, or `CHROMIUM_PATH` set to its executable. It uses only synthetic data and creates comparison/proposal/audit records in the local demo database. It checks comparison, approval, viewer restrictions, tenant switching, mobile overflow and JavaScript errors. Screenshots are written under ignored `.local/screenshots/`.
