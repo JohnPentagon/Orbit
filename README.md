@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.3 adds owner-only [read-connection setup and bounded provider adapters](docs/READ_CONNECTIONS.md). Fixture checks work without vendor credentials. Optional live reads are disabled by default and require local opt-in, approved test access, confirmed configuration and an encrypted test credential. No live provider connection has been verified. Autodesk currently accepts a short-lived approved OAuth access token; ORBIT's OAuth consent/refresh flow is not implemented.
+
 New: [project/connection integration profiles and handover-preview walkthrough](docs/INTEGRATION_PROFILES.md). Multi-field mappings, immutable versions, separate profile approval and fixed synthetic handover manifests now work. These previews transfer zero files; live transfer remains disabled.
 
 - Responsive React/TypeScript portal: overview, comparisons, connections/catalogue, approval records, audit and organisation access administration.
@@ -39,7 +41,7 @@ New: [project/connection integration profiles and handover-preview walkthrough](
 
 The identity picker is deliberately **not production authentication**. It is enabled only by explicit demo mode; startup otherwise refuses to run. The HTTP server must remain bound to loopback. There is no OIDC, invitation flow, password management, MFA, hosted deployment, production vault, PostgreSQL/RLS or durable job queue yet. SQLite is a development persistence choice and has not established production cloud readiness.
 
-Every connector is labelled synthetic. No external API request is executed; vendor health, sync throughput and live success rates are unknown. RedEye API-key authentication is user-confirmed, while exact header/base URL, permissions and entitlement still need verification. Autodesk provisioning and approved sandbox access remain gates. Meridian is additional to Maintenance Connection. Desktop compatibility from 2024 onward is a target, not validated support.
+Dashboard, catalogue, comparison and handover records remain synthetic. Separate read-test profiles can make explicit, gated metadata GET requests after local opt-in; no data is imported. Vendor health, sync throughput and completeness remain unknown. RedEye API-key authentication is user-confirmed, while exact header/base URL, permissions and entitlement still need verification. Autodesk provisioning and approved sandbox access remain gates. Meridian is additional to Maintenance Connection. Desktop compatibility from 2024 onward is a target, not validated support.
 
 There is no AI assistant, live telemetry, file transfer, bidirectional sync, scheduled execution, document download/export, bSDD lookup or ISO 19650 validation yet. Those are future increments. The catalogue and planned governance labels do not imply these features work. No third-party connector marketplace or certification is claimed.
 
@@ -61,6 +63,7 @@ cd frontend
 npm run build
 node smoke.mjs
 node integration-smoke.mjs
+node read-connections-smoke.mjs
 ```
 
 Browser smoke requires the server above running and Chromium at `/usr/bin/chromium`, or `CHROMIUM_PATH` set to its executable. It uses only synthetic data and creates comparison/proposal/audit records in the local demo database. It checks comparison, approval, viewer restrictions, tenant switching, mobile overflow and JavaScript errors. Screenshots are written under ignored `.local/screenshots/`.

@@ -25,6 +25,8 @@ No real account registration occurs. Do not enter production credentials in the 
 
 For the new multi-field editor and synthetic handover flow, follow **docs/INTEGRATION_PROFILES.md**. Start with Northstar engineer → Integration profiles, then use an approver identity for the separate review steps. C-005 is the simplest eligible document for a synthetic manifest. No files are actually transferred.
 
+Version 0.3 also provides **Read connections** to owner test identities. Its fixture check needs no vendor access; live reads stay disabled unless you explicitly follow **docs/READ_CONNECTIONS.md** with approved test credentials and verified configuration. Full Autodesk OAuth sign-in/refresh and live file transfers are not implemented.
+
 ## Stop and start again
 
 Press **Ctrl+C** in the launcher window to stop ORBIT. Double-click `Run-ORBIT.cmd` to start again. The launcher only stops its own server process. If a previous run remains active, close it before restarting. Your local synthetic state is retained under `.local`.

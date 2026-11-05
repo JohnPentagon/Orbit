@@ -1,0 +1,32 @@
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const page=await browser.newPage({viewport:{width:1440,height:1100}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+try{
+ await page.goto('http://127.0.0.1:8000');
+ await page.getByLabel('Choose a synthetic identity').selectOption('north-owner');
+ await page.getByRole('button',{name:'Enter workspace'}).click();
+ await page.getByRole('button',{name:'Read connections',exact:true}).click();
+ await page.getByLabel('Test connection name').fill('Read adapter fixture '+Date.now());
+ await page.getByRole('button',{name:'Save unverified connection',exact:true}).click();
+ await page.getByText('Configuration saved as unverified. No vendor request occurred.').waitFor();
+ const row=page.locator('.read-connection').last();
+ await row.getByRole('button',{name:'Run fixture check',exact:true}).click();
+ await page.getByText('SYNTHETIC-HUB-001',{exact:true}).waitFor();
+ assert.equal(await row.getByRole('button',{name:'Read hubs',exact:true}).isDisabled(),true);
+ await row.getByRole('button',{name:'Set test credential',exact:true}).click();
+ await page.getByLabel(/Short-lived approved test OAuth access token/).fill('synthetic-browser-token-only');
+ await row.getByRole('button',{name:'Store test credential',exact:true}).click();
+ await page.getByText('Encrypted credential replaced. No authentication request was made.').waitFor();
+ assert.equal(await page.locator('body').innerText().then(t=>t.includes('synthetic-browser-token-only')),false);
+ await row.getByRole('button',{name:'Clear stored credential',exact:true}).click();
+ await page.getByText('Local credential removed. Revoke the key or token with the vendor separately.').waitFor();
+ await page.screenshot({path:'../.local/screenshots/read-connections.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ await page.getByLabel('Test identity').selectOption('north-viewer');
+ await page.getByRole('button',{name:'Read connections',exact:true}).waitFor({state:'hidden'});
+ assert.deepEqual(errors,[]);
+ console.log('Read-connection browser smoke passed: unverified setup, fixture read, disabled live read, encrypted credential entry/clear, role gate and mobile; no JavaScript errors.');
+}finally{await browser.close();}
