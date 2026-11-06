@@ -12,6 +12,24 @@ class ProviderError(Exception):
         super().__init__(message)
 
 
+def resource_collection(provider, operation, payload):
+    """Explicit, evidenced envelopes; never turn a missing key into an empty list."""
+    if provider == "forma":
+        keys = ["data"]
+    elif operation == "artefacts":
+        keys = ["results", "items"]  # Official example versus owner-supplied DTO.
+    elif operation in {"groups", "metadata_keys"}:
+        if isinstance(payload, list):
+            return payload, "raw_array"
+        keys = ["items"]
+    else:
+        raise ProviderError("unsupported_operation", "Resource contract not implemented")
+    matches = [key for key in keys if isinstance(payload, dict) and key in payload]
+    if len(matches) != 1 or not isinstance(payload[matches[0]], list):
+        raise ProviderError("contract_mismatch", "Response has a missing, invalid or ambiguous resource-list envelope")
+    return payload[matches[0]], matches[0]
+
+
 def approved_base(provider, base, allowed_hosts):
     try:
         parsed = urlsplit(base)
@@ -64,8 +82,9 @@ def read_page(provider, base, secret, operation, scope, header="", prefix="", tr
             params = {"page[limit]": 25}
         else:
             raise ProviderError("scope_required", "Choose a supported operation and its required hub/project/folder IDs")
-    elif provider == "redeye" and operation == "artefacts":
-        path, params = "/api/v1/artefacts", {"limit": 25}
+    elif provider == "redeye" and operation in {"artefacts", "groups", "metadata_keys"}:
+        path = {"artefacts": "/api/v1/artefacts", "groups": "/api/v1/groups", "metadata_keys": "/api/v1/metadata-keys"}[operation]
+        params = {"limit": 25} if operation == "artefacts" else {}
     else:
         raise ProviderError("unsupported_operation", "This adapter does not implement that resource")
     headers = auth_headers(provider, secret, header, prefix)
@@ -90,25 +109,26 @@ def read_page(provider, base, secret, operation, scope, header="", prefix="", tr
                 data = json.loads(b"".join(chunks))
     except (httpx.HTTPError, ValueError):
         raise ProviderError("read_failed", "Provider response could not be read; verify network access and contract")
-    collection = data.get("data" if provider == "forma" else "results") if isinstance(data, dict) else None
-    if not isinstance(collection, list):
-        raise ProviderError("contract_mismatch", "Response does not match the documented resource-list envelope")
+    collection, response_shape = resource_collection(provider, operation, data)
     resources = []
     for item in collection[:25]:
-        if not isinstance(item, dict) or not isinstance(item.get("id"), (str, int)):
+        if not isinstance(item, dict) or not isinstance(item.get("id"), (str, int)) or isinstance(item.get("id"), bool):
             raise ProviderError("contract_mismatch", "Resource identity is missing or has an unsupported shape")
         attributes = item.get("attributes", {}) if provider == "forma" else item
         if not isinstance(attributes, dict):
             raise ProviderError("contract_mismatch", "Resource attributes have an unsupported shape")
-        label = attributes.get("displayName") or attributes.get("name") or attributes.get("number") or "Unnamed resource"
+        label = attributes.get("displayName") or attributes.get("title") or attributes.get("name") or attributes.get("number") or "Unnamed resource"
         if not isinstance(label, str):
             raise ProviderError("contract_mismatch", "Resource label is not text")
         redact = lambda value: str(value).replace(secret, "[REDACTED]")
-        resources.append({"id": redact(item["id"])[:500], "label": redact(label)[:250], "kind": redact(item.get("type", "artefact"))[:100]})
-    return {"operation": operation, "resources": resources, "returned": len(resources), "coverage": "Bounded first page only; not a complete register", "imported": 0, "files_transferred": 0}
+        kind = {"groups": "group", "metadata_keys": "metadata_key"}.get(operation, "artefact")
+        resources.append({"id": redact(item["id"])[:500], "label": redact(label)[:250], "kind": redact(item.get("type", kind))[:100]})
+    return {"operation": operation, "resources": resources, "returned": len(resources), "response_shape": response_shape, "coverage": "Bounded sample: at most 25 resources; not a complete register", "imported": 0, "files_transferred": 0}
 
 
 FIXTURES = {
     "forma": {"data": [{"id": "SYNTHETIC-HUB-001", "type": "hubs", "attributes": {"name": "Synthetic Autodesk hub"}}]},
     "redeye": {"results": [{"id": 1001, "name": "Synthetic controlled drawing", "number": "SYNTHETIC-001", "type": "drawing"}], "total": 1, "offset": 0, "limit": 25},
+    "redeye:groups": [{"id": 501, "name": "SYNTHETIC group"}],
+    "redeye:metadata_keys": {"items": [{"id": 601, "name": "SYNTHETIC Document Number", "description": "Synthetic metadata definition"}]},
 }

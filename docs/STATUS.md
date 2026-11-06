@@ -4,6 +4,8 @@
 
 ## Implemented
 
+Version 0.4.2: reference DTO-backed RedEye envelope variants and read-only group/metadata-key operations; observed response-shape display; strict ambiguous/malformed-contract rejection; reference artefact title handling. Resolver weaknesses are documented rather than ported as automated decisions. 95 backend tests and the expanded fixture-only read-connection browser flow validate the bounded change. See REDEYE_RESOLVERS_AND_MODELS.md.
+
 Version 0.4.1: RedEye connection defaults now reflect the owner-supplied C# reference client (`https://api.redeyedms.com`, `Authorization: Bearer <apiKey>`), with QA separately labelled. The URL is constructor-overridable and no live key was tested. Model/resolver files are needed before resolving response-envelope differences. All 83 backend tests, TypeScript/build and the updated read-connection browser smoke passed. See REDEYE_REFERENCE_CLIENT.md.
 
 Version 0.4: confidential APS app configuration, three-legged state/PKCE/browser/session-bound consent, app-only token exchange, encrypted refresh tokens and explicit renewal, local disconnect, named hub/project/top-level-folder discovery, project paging and cache-bound scope selection. Read setup can be revised with authorisation invalidation. RedEye QA/bearer presets reflect the documentation with its production-host and auth-conflict limitations. A separate optional Windows launcher simplifies local read opt-in. See AUTODESK_AND_REDEYE_SETUP.md.
@@ -16,7 +18,7 @@ React/TypeScript portal and FastAPI backend; persistent, clearly labelled synthe
 
 ## Validation
 
-83 backend tests passed, including the earlier suites plus OAuth state/PKCE/browser/session binding, replay/expiry, consent rejection, token exchange/refresh, discovery parent/cache/generation validation, paging and setup-change invalidation. All four Chromium workflows passed: original foundation, integration profiles/handovers, read-connection fixture setup and intercepted Autodesk app/discovery UI. The latter is explicitly a UI fixture, not live vendor authorisation. No JavaScript errors were observed. TypeScript/frontend production build passed. Screenshots reside in ignored `.local/screenshots/`. No live vendor request was made during validation.
+95 backend tests passed, including explicit RedEye list/lookup variants, ambiguous-envelope rejection and the earlier suites plus OAuth state/PKCE/browser/session binding, replay/expiry, consent rejection, token exchange/refresh, discovery parent/cache/generation validation, paging and setup-change invalidation. The expanded read-connection browser smoke passed this increment. The four Chromium regressions recorded for version 0.4 passed: original foundation, integration profiles/handovers, read-connection fixture setup and intercepted Autodesk app/discovery UI. The latter is explicitly a UI fixture, not live vendor authorisation. No JavaScript errors were observed. TypeScript/frontend production build passed. Screenshots reside in ignored `.local/screenshots/`. No live vendor request was made during validation.
 
 Non-failing toolchain messages: Starlette's TestClient reports an httpx deprecation notice; the browser bundle reports ignored `use client` directives from the icon library. The portal is a client-rendered application and browser validation passed. Neither warning was suppressed or described as a failed application check.
 

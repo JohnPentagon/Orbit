@@ -12,6 +12,10 @@
 
 ORBIT now defaults RedEye setup to this reference client's URL and bearer format, labelled **Utility default — verify configured overrides**. The official-docs QA option remains separate. Both hosts are exact presets, with the existing explicit test-access confirmations and local live-read opt-in still required. A custom host still requires the operator allowlist. No live credential request was made to validate the reference utility's host.
 
+## Follow-up evidence
+
+The product owner subsequently supplied the models and resolvers. See [resolver/model review](REDEYE_RESOLVERS_AND_MODELS.md): the artefact model explicitly maps Items to `items`, while search maps to `results`. Known array/wrapper variants are now supported explicitly, without claiming universal live compatibility. The questions below record the initial review and are superseded where that follow-up establishes the contract.
+
 ## Response/mapping questions
 
 - Metadata keys and groups are deserialised as **raw arrays** in this client, whereas the published docs show wrapper schemas. Need actual model definitions and, later, sanitised responses before implementing that behaviour as verified contract support.

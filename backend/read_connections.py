@@ -26,7 +26,7 @@ class ReadConnection(BaseModel):
 
 
 class ReadRequest(BaseModel):
-    operation: Literal["hubs", "projects", "folders", "documents", "artefacts"]
+    operation: Literal["hubs", "projects", "folders", "documents", "artefacts", "groups", "metadata_keys"]
     hub: str = Field(default="", max_length=250)
     project: str = Field(default="", max_length=250)
     folder: str = Field(default="", max_length=500)
@@ -101,13 +101,17 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
         return {"saved": True, "reauthorisation_required": True}
 
     @app.post("/api/projects/{project}/read-connections/{connection}/fixture-check")
-    def fixture_check(project: str, connection: str, who=Depends(identity)):
+    def fixture_check(project: str, connection: str, body: ReadRequest | None = None, who=Depends(identity)):
         permit(who, "connection")
         with db() as c:
             row = scoped(c, who, project, connection)
             provider = row["provider"]
-            transport = httpx.MockTransport(lambda request: httpx.Response(200, json=FIXTURES[provider]))
-            operation = "hubs" if provider == "forma" else "artefacts"
+            default_operation = "hubs" if provider == "forma" else "artefacts"
+            operation = body.operation if body else default_operation
+            key = provider if operation == default_operation else f"{provider}:{operation}"
+            if key not in FIXTURES:
+                raise HTTPException(422, "No fixture is available for that operation")
+            transport = httpx.MockTransport(lambda request: httpx.Response(200, json=FIXTURES[key]))
             result = read_page(provider, "https://fixture.invalid", "synthetic-fixture-only", operation, {}, "X-Fixture-Key", transport=transport)
             result.update(synthetic=True, live_verified=False, note="Hand-authored contract example, not a recorded vendor response")
             audit(c, who, "read_connection.fixture_checked", project, connection)

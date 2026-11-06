@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.4.2 adds explicit [RedEye resolver/model contract support](docs/REDEYE_RESOLVERS_AND_MODELS.md): artefact `items`/`results`, raw-array/`items` group and metadata-key lookups, title display and observed-shape reporting. Group/key reads and fixture checks are available in Read connections. No natural-language resolver, group filter or live-mapping import is enabled.
+
 Version 0.4.1 incorporates the [owner-supplied RedEye client evidence](docs/REDEYE_REFERENCE_CLIENT.md): the overridable utility-default API host and bearer API-key format are now prefilled. Response-envelope and resolver behaviour remain to be checked before changing parsing.
 
 Version 0.4 adds [Autodesk sign-in, token renewal and named resource selectors, plus documented RedEye presets](docs/AUTODESK_AND_REDEYE_SETUP.md). Three-legged PKCE consent and app-only token exchange are implemented for an approved APS application, with explicit renewal and encrypted local credentials. Select hub/project names rather than typing IDs. Optional live tests still require operator opt-in and approved access. No real vendor connection has been verified; fixture checks remain available without credentials.

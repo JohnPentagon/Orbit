@@ -28,11 +28,22 @@ try{
  assert.equal(await page.locator('body').innerText().then(t=>t.includes('synthetic-browser-token-only')),false);
  await row.getByRole('button',{name:'Clear stored credential',exact:true}).click();
  await page.getByText('Local credential removed. Revoke the key or token with the vendor separately.').waitFor();
+ await page.getByLabel('Read provider').selectOption('redeye');
+ await page.getByLabel('Test connection name').fill('RedEye lookup fixtures '+Date.now());
+ await page.getByRole('button',{name:'Save unverified connection',exact:true}).click();
+ await page.getByText('Configuration saved as unverified. No vendor request occurred.').waitFor();
+ const redeye=page.locator('.read-connection').last();
+ await redeye.getByRole('button',{name:'Fixture groups',exact:true}).click();
+ await page.getByText('SYNTHETIC group',{exact:true}).waitFor();
+ await page.getByText(/Observed response shape: raw_array/).waitFor();
+ await redeye.getByRole('button',{name:'Fixture metadata keys',exact:true}).click();
+ await page.getByText('SYNTHETIC Document Number',{exact:true}).waitFor();
+ await page.getByText(/Observed response shape: items/).waitFor();
  await page.screenshot({path:'../.local/screenshots/read-connections.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.getByLabel('Test identity').selectOption('north-viewer');
  await page.getByRole('button',{name:'Read connections',exact:true}).waitFor({state:'hidden'});
  assert.deepEqual(errors,[]);
- console.log('Read-connection browser smoke passed: unverified setup, fixture read, disabled live read, encrypted credential entry/clear, role gate and mobile; no JavaScript errors.');
+ console.log('Read-connection browser smoke passed: unverified setup, fixture read, disabled live read, encrypted credential entry/clear, RedEye array/wrapper lookup fixtures, role gate and mobile; no JavaScript errors.');
 }finally{await browser.close();}
