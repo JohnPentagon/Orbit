@@ -4,6 +4,8 @@
 
 ## Implemented
 
+Version 0.4.1: RedEye connection defaults now reflect the owner-supplied C# reference client (`https://api.redeyedms.com`, `Authorization: Bearer <apiKey>`), with QA separately labelled. The URL is constructor-overridable and no live key was tested. Model/resolver files are needed before resolving response-envelope differences. All 83 backend tests, TypeScript/build and the updated read-connection browser smoke passed. See REDEYE_REFERENCE_CLIENT.md.
+
 Version 0.4: confidential APS app configuration, three-legged state/PKCE/browser/session-bound consent, app-only token exchange, encrypted refresh tokens and explicit renewal, local disconnect, named hub/project/top-level-folder discovery, project paging and cache-bound scope selection. Read setup can be revised with authorisation invalidation. RedEye QA/bearer presets reflect the documentation with its production-host and auth-conflict limitations. A separate optional Windows launcher simplifies local read opt-in. See AUTODESK_AND_REDEYE_SETUP.md.
 
 Version 0.3: separate project-scoped read-test profiles, encrypted credential replacement/clear, offline fixture checks and bounded Autodesk/RedEye GET adapters. Live reads require explicit operator opt-in and authorised/confirmed settings; RedEye additionally requires an exact operator-approved host and confirmed API-key header. Returned resources are not imported into comparisons/handovers. The manual-token path is now an advanced alternative to the version 0.4 consent/app-only/renewal controls. See READ_CONNECTIONS.md.

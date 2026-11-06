@@ -8,6 +8,12 @@ try{
  await page.getByLabel('Choose a synthetic identity').selectOption('north-owner');
  await page.getByRole('button',{name:'Enter workspace'}).click();
  await page.getByRole('button',{name:'Read connections',exact:true}).click();
+ await page.getByLabel('Read provider').selectOption('redeye');
+ assert.equal(await page.getByLabel('Read API base URL').inputValue(),'https://api.redeyedms.com');
+ assert.equal(await page.getByLabel('API-key header').inputValue(),'Authorization');
+ await page.getByLabel('RedEye environment').selectOption('qa');
+ assert.equal(await page.getByLabel('Read API base URL').inputValue(),'https://qa-api.redeyedms.com');
+ await page.getByLabel('Read provider').selectOption('forma');
  await page.getByLabel('Test connection name').fill('Read adapter fixture '+Date.now());
  await page.getByRole('button',{name:'Save unverified connection',exact:true}).click();
  await page.getByText('Configuration saved as unverified. No vendor request occurred.').waitFor();

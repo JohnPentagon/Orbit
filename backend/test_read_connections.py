@@ -152,8 +152,9 @@ def test_clear_credential_invalidates_last_result_without_claiming_revocation(po
     assert not item["credential_present"] and item["last_result"] is None and item["generation"]==3
 
 
-def test_documented_qa_bearer_preset_does_not_imply_production_host():
+def test_documented_qa_and_owner_reference_client_bearer_presets():
     assert approved_base("redeye","https://qa-api.redeyedms.com",[]) == "https://qa-api.redeyedms.com"
     assert auth_headers("redeye","synthetic-api-key","Authorization","Bearer")["Authorization"] == "Bearer synthetic-api-key"
+    assert approved_base("redeye","https://api.redeyedms.com",[]) == "https://api.redeyedms.com"
     with pytest.raises(ProviderError):
-        approved_base("redeye","https://api.redeyedms.com",[])
+        approved_base("redeye","https://unconfirmed-production.example",[])

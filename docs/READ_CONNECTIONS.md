@@ -1,6 +1,6 @@
 # Read-only connection testing
 
-Current setup: [version 0.4 authorisation and named resource selectors](AUTODESK_AND_REDEYE_SETUP.md). This page documents the underlying read-adapter controls; the manual-token path below remains an advanced option.
+Current setup: [version 0.4 authorisation and named resource selectors](AUTODESK_AND_REDEYE_SETUP.md), with [version 0.4.1 RedEye reference-client defaults](REDEYE_REFERENCE_CLIENT.md). This page documents the underlying read-adapter controls; the manual-token path below remains an advanced option.
 
 ## What is implemented
 
@@ -36,7 +36,7 @@ Use only an account, resource scope and data set approved for this test, on your
 - Ask the RedEye administrator/vendor for the actual test API host, API entitlement and bucket/resource permissions. The supplied public page lists localhost and QA examples, which are not proof of the customer's approved base URL.
 - Confirm the exact API-key header and whether the value has a prefix. API-key authentication is confirmed by the product owner; ORBIT deliberately does not invent its transport format or a token-issuance flow.
 - Ask about key creation, expiry/rotation and revocation, quotas, the list envelope/pagination and latest-approved-revision semantics.
-- The documented QA hostname is an exact built-in preset. Configure any administrator-confirmed production hostname in the local operator allowlist. No wildcard or suffix matching is used. Store only an approved test key, never put it into the profile name, evidence field, URL or a chat message.
+- The documented QA hostname and owner-supplied reference client default api.redeyedms.com are exact built-in presets. Configure any administrator-confirmed production hostname in the local operator allowlist. No wildcard or suffix matching is used. Store only an approved test key, never put it into the profile name, evidence field, URL or a chat message.
 
 ## Explicitly enable local reads
 

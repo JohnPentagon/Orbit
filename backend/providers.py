@@ -30,7 +30,8 @@ def approved_base(provider, base, allowed_hosts):
         pass
     else:
         raise ProviderError("invalid_host", "IP-address destinations are not supported")
-    allowed = {"developer.api.autodesk.com"} if provider == "forma" else {"qa-api.redeyedms.com", *allowed_hosts}
+    # QA comes from official docs; api.redeyedms.com comes from the owner's reference client.
+    allowed = {"developer.api.autodesk.com"} if provider == "forma" else {"qa-api.redeyedms.com", "api.redeyedms.com", *allowed_hosts}
     if host not in allowed or not re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*", host):
         raise ProviderError("host_not_allowed", "Vendor host is not in the operator's exact-host allowlist")
     return "https://" + host

@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.4.1 incorporates the [owner-supplied RedEye client evidence](docs/REDEYE_REFERENCE_CLIENT.md): the overridable utility-default API host and bearer API-key format are now prefilled. Response-envelope and resolver behaviour remain to be checked before changing parsing.
+
 Version 0.4 adds [Autodesk sign-in, token renewal and named resource selectors, plus documented RedEye presets](docs/AUTODESK_AND_REDEYE_SETUP.md). Three-legged PKCE consent and app-only token exchange are implemented for an approved APS application, with explicit renewal and encrypted local credentials. Select hub/project names rather than typing IDs. Optional live tests still require operator opt-in and approved access. No real vendor connection has been verified; fixture checks remain available without credentials.
 
 New: [project/connection integration profiles and handover-preview walkthrough](docs/INTEGRATION_PROFILES.md). Multi-field mappings, immutable versions, separate profile approval and fixed synthetic handover manifests now work. These previews transfer zero files; live transfer remains disabled.
@@ -41,7 +43,7 @@ New: [project/connection integration profiles and handover-preview walkthrough](
 
 The identity picker is deliberately **not production authentication**. It is enabled only by explicit demo mode; startup otherwise refuses to run. The HTTP server must remain bound to loopback. There is no OIDC, invitation flow, password management, MFA, hosted deployment, production vault, PostgreSQL/RLS or durable job queue yet. SQLite is a development persistence choice and has not established production cloud readiness.
 
-Dashboard, catalogue, comparison and handover records remain synthetic. Separate read-test profiles can make explicit, gated metadata GET requests after local opt-in; no data is imported. Vendor health, sync throughput and completeness remain unknown. RedEye API-key authentication is user-confirmed, while exact header/base URL, permissions and entitlement still need verification. Autodesk provisioning and approved sandbox access remain gates. Meridian is additional to Maintenance Connection. Desktop compatibility from 2024 onward is a target, not validated support.
+Dashboard, catalogue, comparison and handover records remain synthetic. Separate read-test profiles can make explicit, gated metadata GET requests after local opt-in; no data is imported. Vendor health, sync throughput and completeness remain unknown. The supplied RedEye client establishes its overridable URL and bearer-key defaults; effective configuration overrides, customer permissions/entitlement and live access still need verification. Autodesk provisioning and approved sandbox access remain gates. Meridian is additional to Maintenance Connection. Desktop compatibility from 2024 onward is a target, not validated support.
 
 There is no AI assistant, live telemetry, file transfer, bidirectional sync, scheduled execution, document download/export, bSDD lookup or ISO 19650 validation yet. Those are future increments. The catalogue and planned governance labels do not imply these features work. No third-party connector marketplace or certification is claimed.
 

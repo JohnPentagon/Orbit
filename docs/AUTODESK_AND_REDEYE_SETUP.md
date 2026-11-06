@@ -9,6 +9,10 @@
 
 Stop the old server before starting either launcher. The extra Windows launcher is reviewed but cannot be executed in the Linux development workspace. Use only a trusted, single-user local test computer. The ORBIT demo identity picker is still not production authentication.
 
+## Reference-client update (version 0.4.1)
+
+The product owner subsequently supplied `RedEyeApiClient.cs`: its default is **https://api.redeyedms.com**, and `SetApiKey` sends **Authorization: Bearer <apiKey>**. This now appears as a labelled utility-default preset alongside QA/custom options. The constructor allows overrides, so inspect the calling/resolver configuration to establish its effective host. See [reference-client review](REDEYE_REFERENCE_CLIENT.md). This is additional user-supplied implementation evidence; it does not change what the public documentation itself establishes below.
+
 ## What the RedEye documentation actually confirms
 
 Source: https://api.redeyedms.com/#redeye-dms-api, retrieved 6 November 2026 (HTTP 200). The page identifies itself as RedEye DMS API v3.0.0.
@@ -22,9 +26,9 @@ Source: https://api.redeyedms.com/#redeye-dms-api, retrieved 6 November 2026 (HT
 | Production base URL | Not established by the published page |
 | Key lifecycle/entitlement/bucket binding | Not established by this page |
 
-The portal now offers the documented QA host and a labelled bearer-header preset. This does **not** establish that a particular API key can be used as that bearer value; the customer/vendor must confirm applicability. Header/prefix remain editable for a vendor-confirmed alternative. Do not send a production key to QA by default. The documentation hostname `api.redeyedms.com` is not assumed to be the production API base.
+The portal now offers the documented QA host and a labelled bearer-header preset. This does **not** establish that a particular API key can be used as that bearer value; the customer/vendor must confirm applicability. Header/prefix remain editable for a vendor-confirmed alternative. Do not send a production key to QA by default. The public documentation alone does not establish a production host; the supplied client now provides separate evidence for `api.redeyedms.com` as its overridable default.
 
-The QA hostname is a built-in exact-host preset, still behind explicit read opt-in and connection-level approval confirmations. Custom production hosts must be added through the local read-test launcher or the existing operator allowlist environment setting. No wildcard matching, custom ports or redirect following is enabled.
+The QA and reference-client default hostnames are built-in exact-host presets, still behind explicit read opt-in and connection-level approval confirmations. Custom production hosts must be added through the local read-test launcher or the existing operator allowlist environment setting. No wildcard matching, custom ports or redirect following is enabled.
 
 ### Steps with your existing key
 
