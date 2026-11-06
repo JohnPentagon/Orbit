@@ -4,6 +4,8 @@
 
 ## Implemented
 
+Version 0.6: optional project bSDD dictionary/version selection via public list or canonical identifier URL, paged class browsing / direct class code, selected server-sourced property snapshots, enable/disable, revision conflicts and project/tenant/role checks. The mapping editor suggests selected property field names as reference only. Dictionary/class/property reads were verified live without credentials; IFC 4.3 IfcWall returned 233 definitions. One rate-limit response was observed and a later class read succeeded; successful metadata is now cached for up to five minutes. No vendor properties are created and bSDD data types are not enforced against documents. See BSDD_SETUP.md.
+
 Version 0.5: project/tenant-scoped connection preparation records for Meridian, Procore, Maintenance Connection, Forma and RedEye; owner-only edits, project-role viewing, manual evidence, revision conflict detection, invalidation of checks after connection-setting changes and browser JSON export. Meridian Explorer has an offline response parser and hand-authored preview only. Cloud/on-premises routes are planning options, not running workers or tunnels. See MERIDIAN_AND_ON_PREMISES.md and TESTER_CHECKLIST.md.
 
 Customer validation update: owner reports that RedEye artefact, group and metadata-key reads worked locally. These are recorded as user-reported results; no corresponding live requests were independently reproduced by the agent. Autodesk, group filtering, pagination, write/transfer paths and all Meridian connectivity remain unverified.
@@ -24,6 +26,8 @@ React/TypeScript portal and FastAPI backend; persistent, clearly labelled synthe
 
 ## Validation
 
+Version 0.6 validation: **157 backend tests passed**, including anonymous fixed-host transport, unsafe identifiers/redirects, malformed/oversized payloads, preserved settings on failure, public response caching, pinned server-sourced definitions, optimistic revisions, tenant/project/role checks and mid-request privilege removal. TypeScript/production build passed. The bSDD browser service-fixture flow and existing integration-profile/handover browser regression passed with no JavaScript errors. Separate live public bSDD calls verified dictionary/class/property connectivity; they are not described as fixture-only results. Customer acceptance of the chosen project dictionary remains pending in TESTER_CHECKLIST.md.
+
 Version 0.5 validation: **121 backend tests passed**, including new project/tenant/role and grant-revocation checks, durable/repeatable migration, optimistic editing, evidence invalidation, configuration rejection and Meridian contract parsing. TypeScript/frontend production build passed. The new Chromium connection-preparation flow passed save/reload, manual evidence, offline preview, connection-setting invalidation, browser JSON export and viewer access, with no JavaScript errors. Existing foundation, read-connection and readiness browser regressions also passed against version 0.5. All new vendor contract tests and previews use fixtures, not live customer systems.
 
 Earlier validation: version 0.4.3 passed 102 backend tests and diagnostic/read-connection browser checks. Version 0.4 recorded four Chromium regressions: foundation, integration profiles/handovers, read-connection fixtures and intercepted Autodesk app/discovery UI. These do not establish live OAuth or vendor compatibility. Screenshots reside in ignored `.local/screenshots/`. No live vendor request was made by the agent during validation.
@@ -32,7 +36,7 @@ Non-failing toolchain messages: Starlette's TestClient reports an httpx deprecat
 
 ## Not implemented / gates
 
-Production OIDC, invitations/MFA, cloud deployment, managed vault/database, PostgreSQL/RLS and job queue; complete vendor-verified Autodesk/RedEye setup, automatic renewal, exhaustive discovery and integration of real records into mappings; broader API-key lifecycle/permission verification; downloads and exports; executable mappings, vendor writes and bidirectional sync; AI tools; bSDD lookup; ISO 19650 rule profiles; Revit/Navisworks bridges; billing; public connector submissions. Do not interpret catalogue entries or planned labels as support.
+Production OIDC, invitations/MFA, cloud deployment, managed vault/database, PostgreSQL/RLS and job queue; complete vendor-verified Autodesk/RedEye setup, automatic renewal, exhaustive discovery and integration of real records into mappings; broader API-key lifecycle/permission verification; downloads and exports; executable mappings, vendor writes and bidirectional sync; AI tools; private bSDD authentication and executable property validation; ISO 19650 rule profiles; Revit/Navisworks bridges; billing; public connector submissions. Do not interpret catalogue entries or planned labels as support.
 
 ## Next
 

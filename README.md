@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.6 adds optional **bSDD dictionaries** per project: live public dictionary/version selection or verified identifier URL, class/property browsing, saved property definitions and destination-field suggestions in the mapping editor. See [bSDD setup and verified connectivity](docs/BSDD_SETUP.md). No API key is required for these public reads.
+
 Version 0.5 adds **Connection preparation**: saved, project-specific provider plans and manual tester checklists, JSON export, proposed cloud/on-premises execution routes, and a bounded offline Meridian Explorer contract preview. Owners edit; other project roles view. Meridian, Procore and Maintenance Connection remain preparation-only. See [tester checklist](docs/TESTER_CHECKLIST.md) and [Meridian/on-premises findings](docs/MERIDIAN_AND_ON_PREMISES.md).
 
 Version 0.4.3 adds [saved-connection readiness and inline 409 diagnostics](docs/READ_CONNECTION_DIAGNOSTICS.md), safe terminal reason codes and frontend/backend version mismatch warnings. The exact local failed check is now visible on the connection card instead of hidden at the bottom of the page.
@@ -51,7 +53,7 @@ The identity picker is deliberately **not production authentication**. It is ena
 
 Dashboard, catalogue, comparison and handover records remain synthetic. Separate read-test profiles can make explicit, gated metadata GET requests after local opt-in; no data is imported. Vendor health, sync throughput and completeness remain unknown. The owner reports successful RedEye artefact/group/metadata-key reads; this does not verify other accounts, scopes or all response contracts. The supplied RedEye client establishes its overridable URL and bearer-key defaults; effective configuration overrides, customer permissions/entitlement and live access still need verification. Autodesk provisioning and approved sandbox access remain gates. Meridian is additional to Maintenance Connection. Desktop compatibility from 2024 onward is a target, not validated support.
 
-There is no AI assistant, live telemetry, file transfer, bidirectional sync, scheduled execution, document download/export, bSDD lookup or ISO 19650 validation yet. Those are future increments. The catalogue and planned governance labels do not imply these features work. No third-party connector marketplace or certification is claimed.
+There is no AI assistant, live telemetry, file transfer, bidirectional sync, scheduled execution, document download/export or ISO 19650 validation yet. Those are future increments. The catalogue and planned governance labels do not imply these features work. No third-party connector marketplace or certification is claimed.
 
 The comparison uses an explicitly synthetic complete local register. Matching document numbers and revision labels establish candidates only, never verified identity/content equality. No vendor approval state is inferred from a filename.
 

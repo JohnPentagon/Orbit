@@ -29,3 +29,7 @@ Field ownership, document-identity links, approval/revision mapping, conflict re
 Track delayed customer testing per project and intended vendor connection, with explicit manual evidence rather than inferring a pass from a fixture. Do not propagate one reported RedEye success across tenants. Plans are not executable integration profiles; changing relevant settings invalidates their checklist results.
 
 PowerWeb is an Enterprise browser client. Start Meridian contract groundwork with documented Explorer read shapes, preserving stable document/version IDs and business revisions separately. Do not guess API Service login/auth or paths from Mobile installation examples; the documented path discrepancy and paging semantics need installation-specific confirmation. Keep .NET/Connection API and Portal/Cloud routes distinct. Model private execution options now without claiming a worker/tunnel exists.
+
+## 6 November 2026 — optional public bSDD property references
+
+Use the versioned public REST API, not direct identifier fetching or demonstration OAuth client IDs. Pin dictionary/version and selected class-property snapshots per project. Keep enablement optional, requirements explicit and private authentication out of the anonymous adapter. Reference field suggestions assist mapping design; do not silently change approved profiles or claim executable type/unit/compliance validation. Cache successful public metadata briefly after observed rate limiting, and preserve existing project settings during failures.

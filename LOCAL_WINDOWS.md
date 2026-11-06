@@ -77,3 +77,7 @@ In version 0.5, choose **Connection preparation** in the sidebar. As an owner, c
 Edit a saved plan to update test statuses later; **Export checklist** downloads the current project's records as JSON. Manual results never enable vendor access. Changing connection settings resets existing checks to untested. **Preview Explorer fixture** uses a hand-authored response only and does not authenticate to Meridian.
 
 The wider acceptance list is [docs/TESTER_CHECKLIST.md](docs/TESTER_CHECKLIST.md). Keep your existing `.local` database and matching vault key together when updating; do not publish or share them. The new table is added automatically on startup without replacing existing records.
+
+## Optional bSDD dictionary
+
+Version 0.6 adds **bSDD dictionaries** to the sidebar. As the project owner, browse public dictionaries or verify a versioned dictionary URL, optionally select class properties, enable the reference and save. No bSDD API key is needed. An enabled selection supplies field-name suggestions under Integration profiles. Existing mappings keep working with the reference disabled. Follow [docs/BSDD_SETUP.md](docs/BSDD_SETUP.md) for examples and limits.

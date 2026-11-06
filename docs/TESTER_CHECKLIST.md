@@ -49,6 +49,15 @@ Evidence: owner reported “connection confirmed” and “they all worked” in
 
 Current Meridian support: saved preparation records and a hand-authored Explorer response preview only. No network adapter, login, private worker, API discovery or writes. A fixture preview never marks a manual test passed.
 
+## bSDD public reference
+
+- [x] Agent verified anonymous public dictionary listing and exact versioned URI resolution.
+- [x] Agent verified paged classes and IfcWall class/property response parsing (233 definitions observed).
+- [x] Automated checks cover project/role boundaries, safe fixed-host requests, saved selection protection and cache behaviour; browser service-fixture workflow passed.
+- [ ] Owner chooses the actual project dictionary/version and reviews its status/licence.
+- [ ] Owner tests dictionary URL input and class/property selection locally, then confirms mapping suggestions meet the project naming needs.
+- [ ] Review desired type/unit/allowed-value enforcement before implementing document validation or vendor field creation.
+
 ## Other connectors and desktop versions
 
 - [ ] Procore: developer app/customer installation, sandbox, OAuth contract, company/project document permissions and read API contract.
@@ -64,7 +73,7 @@ Current Meridian support: saved preparation records and a hand-authored Explorer
 - [ ] Test document identity links, revision/approval-state mapping, file hashes, original/rendition policy, duplicate handling and permissions before transfers.
 - [ ] Before one-way writes: sandbox, dry run, explicit scope/approval, audit, retry/idempotency, cancellation and partial-failure recovery.
 - [ ] Before bidirectional writes: ownership/conflicts, loop prevention, source changes during transfer and reconciliation.
-- [ ] Decide optional bSDD dictionary/version and ISO 19650 client/national/project rules; neither is implemented validation.
+- [ ] Decide ISO 19650 client/national/project rules; bSDD selection is now available, but neither supplies implemented document-compliance validation.
 - [ ] Before cloud deployment: production identity, tenant isolation, managed secrets, storage/database, job execution, backups, retention and operational support.
 
 Automated regression results are recorded separately in STATUS.md. They establish software behaviour under fixtures, not vendor connectivity or customer acceptance.
