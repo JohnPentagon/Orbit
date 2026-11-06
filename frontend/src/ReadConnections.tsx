@@ -3,7 +3,7 @@ import {KeyRound, ShieldCheck} from 'lucide-react';
 import AutodeskSetup from './AutodeskSetup';
 
 type Config={name:string;provider:string;base_url:string;auth_header:string;auth_prefix:string;vendor_settings_confirmed:boolean;approved_test_access:boolean;evidence_note:string;hub:string;vendor_project:string;folder:string;hub_label?:string;project_label?:string;folder_label?:string};
-const PORTAL_VERSION='0.4.3';
+const PORTAL_VERSION='0.5.0';
 type Readiness={ready:boolean;issues:{code:string;message:string;next_action:string}[]};
 type Connection={readiness?:Readiness;id:string;name:string;provider:string;configuration:Config;generation:number;credential_present:boolean;last_result:null|{observed:string;operation:string;returned:number}};
 type Result={response_shape?:string;synthetic:boolean;live_verified?:boolean;note?:string;coverage:string;operation:string;resources:{id:string;label:string;kind:string}[];returned:number;permission_claim?:string};

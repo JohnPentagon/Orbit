@@ -69,3 +69,11 @@ Restart the launcher afterwards. Backend tests, after setup, can be run from the
 ```
 
 The Python API tests and Chromium workflow were validated in the Linux development workspace. The Windows launcher is supplied for Windows 11 but cannot be executed in that Linux environment; its Windows behaviour needs your first-run check. Windows package-wheel availability and your company's local restrictions are not assumed verified.
+
+## Connection plans and tests to return to
+
+In version 0.5, choose **Connection preparation** in the sidebar. As an owner, create a separate named plan for each intended connection in the selected project. Meridian includes Enterprise/PowerWeb context, interface selection, installed release, API URL reference and on-premises execution options. Save unknowns as untested or blocked with a short non-secret reason. Other project roles can view saved plans.
+
+Edit a saved plan to update test statuses later; **Export checklist** downloads the current project's records as JSON. Manual results never enable vendor access. Changing connection settings resets existing checks to untested. **Preview Explorer fixture** uses a hand-authored response only and does not authenticate to Meridian.
+
+The wider acceptance list is [docs/TESTER_CHECKLIST.md](docs/TESTER_CHECKLIST.md). Keep your existing `.local` database and matching vault key together when updating; do not publish or share them. The new table is added automatically on startup without replacing existing records.

@@ -23,3 +23,9 @@ OIDC provider and cloud hosting, managed database/storage/vault, job durability,
 Autodesk supported auth/provisioning, RedEye API-key transport/base URL/lifecycle and both vendors' licensed customer scopes and sandbox access. Neither undocumented API capabilities nor calendar-year cloud API versions should be invented.
 
 Field ownership, document-identity links, approval/revision mapping, conflict resolution, idempotency and loop prevention precede bidirectional writes. bSDD dictionary/version selection and ISO 19650 project/national/client rules remain configurable proposals, not implemented validation or compliance claims.
+
+## 6 November 2026 — commissioning records and Meridian boundary
+
+Track delayed customer testing per project and intended vendor connection, with explicit manual evidence rather than inferring a pass from a fixture. Do not propagate one reported RedEye success across tenants. Plans are not executable integration profiles; changing relevant settings invalidates their checklist results.
+
+PowerWeb is an Enterprise browser client. Start Meridian contract groundwork with documented Explorer read shapes, preserving stable document/version IDs and business revisions separately. Do not guess API Service login/auth or paths from Mobile installation examples; the documented path discrepancy and paging semantics need installation-specific confirmation. Keep .NET/Connection API and Portal/Cloud routes distinct. Model private execution options now without claiming a worker/tunnel exists.

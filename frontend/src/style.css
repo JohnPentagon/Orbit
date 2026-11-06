@@ -7,3 +7,10 @@
 .autodesk-setup{border-top:1px solid #33465f;margin:10px 20px 25px;background:#0d1725;border-radius:8px}.autodesk-setup .profile-editor{padding-top:12px}.autodesk-setup .profile-editor .profile-editor{padding:0}.autodesk-setup input[readonly]{color:#89aecf}.autodesk-setup .profile-editor>.primary,.autodesk-setup .profile-editor>fieldset>.primary{margin-top:20px}
 
 .connection-feedback{padding:0 22px 18px}.readiness-blocked{border:1px solid #765336;background:#2b231c;padding:13px;border-radius:6px;color:#e3bf8f;font-size:11px}.readiness-blocked p{color:#c4ad91;font-size:11px}.readiness-ready{color:#93d4bd;font-size:11px;padding:10px 0}.editing-indicator{padding:12px;border:1px solid #42719a;color:#b4dcfa;background:#152f46;border-radius:6px}.connection-feedback code{overflow-wrap:anywhere}.read-connection code{overflow-wrap:anywhere}
+
+.commission-check{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:16px 0;border-bottom:1px solid var(--border,#29384a)}
+.commission-check label{display:flex;flex-direction:column;gap:9px}
+.profile-editor textarea{min-height:76px;resize:vertical;background:#111d2c;color:inherit;border:1px solid #304358;border-radius:5px;padding:9px;font:inherit}
+@media(max-width:800px){.commission-check{grid-template-columns:1fr}}
+
+.commission-summary{padding:0 22px 18px}
