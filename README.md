@@ -25,7 +25,7 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
-Version 0.3 adds owner-only [read-connection setup and bounded provider adapters](docs/READ_CONNECTIONS.md). Fixture checks work without vendor credentials. Optional live reads are disabled by default and require local opt-in, approved test access, confirmed configuration and an encrypted test credential. No live provider connection has been verified. Autodesk currently accepts a short-lived approved OAuth access token; ORBIT's OAuth consent/refresh flow is not implemented.
+Version 0.4 adds [Autodesk sign-in, token renewal and named resource selectors, plus documented RedEye presets](docs/AUTODESK_AND_REDEYE_SETUP.md). Three-legged PKCE consent and app-only token exchange are implemented for an approved APS application, with explicit renewal and encrypted local credentials. Select hub/project names rather than typing IDs. Optional live tests still require operator opt-in and approved access. No real vendor connection has been verified; fixture checks remain available without credentials.
 
 New: [project/connection integration profiles and handover-preview walkthrough](docs/INTEGRATION_PROFILES.md). Multi-field mappings, immutable versions, separate profile approval and fixed synthetic handover manifests now work. These previews transfer zero files; live transfer remains disabled.
 
@@ -64,6 +64,7 @@ npm run build
 node smoke.mjs
 node integration-smoke.mjs
 node read-connections-smoke.mjs
+node autodesk-setup-smoke.mjs
 ```
 
 Browser smoke requires the server above running and Chromium at `/usr/bin/chromium`, or `CHROMIUM_PATH` set to its executable. It uses only synthetic data and creates comparison/proposal/audit records in the local demo database. It checks comparison, approval, viewer restrictions, tenant switching, mobile overflow and JavaScript errors. Screenshots are written under ignored `.local/screenshots/`.

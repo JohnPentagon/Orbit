@@ -30,7 +30,7 @@ def approved_base(provider, base, allowed_hosts):
         pass
     else:
         raise ProviderError("invalid_host", "IP-address destinations are not supported")
-    allowed = {"developer.api.autodesk.com"} if provider == "forma" else set(allowed_hosts)
+    allowed = {"developer.api.autodesk.com"} if provider == "forma" else {"qa-api.redeyedms.com", *allowed_hosts}
     if host not in allowed or not re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*", host):
         raise ProviderError("host_not_allowed", "Vendor host is not in the operator's exact-host allowlist")
     return "https://" + host
@@ -55,7 +55,7 @@ def read_page(provider, base, secret, operation, scope, header="", prefix="", tr
             path = "/project/v1/hubs"
         elif operation == "projects" and scope.get("hub"):
             path = f"/project/v1/hubs/{encode(scope['hub'])}/projects"
-            params = {"page[limit]": 25}
+            params = {"page[limit]": 25, "page[number]": scope.get("page", 0)}
         elif operation == "folders" and scope.get("hub") and scope.get("project"):
             path = f"/project/v1/hubs/{encode(scope['hub'])}/projects/{encode(scope['project'])}/topFolders"
         elif operation == "documents" and scope.get("project") and scope.get("folder"):

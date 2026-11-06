@@ -150,3 +150,10 @@ def test_clear_credential_invalidates_last_result_without_claiming_revocation(po
     assert r.status_code==200 and r.json()["vendor_revoked"] is False
     item=c.get("/api/projects/harbour/read-connections").json()["connections"][0]
     assert not item["credential_present"] and item["last_result"] is None and item["generation"]==3
+
+
+def test_documented_qa_bearer_preset_does_not_imply_production_host():
+    assert approved_base("redeye","https://qa-api.redeyedms.com",[]) == "https://qa-api.redeyedms.com"
+    assert auth_headers("redeye","synthetic-api-key","Authorization","Bearer")["Authorization"] == "Bearer synthetic-api-key"
+    with pytest.raises(ProviderError):
+        approved_base("redeye","https://api.redeyedms.com",[])

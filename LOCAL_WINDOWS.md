@@ -25,7 +25,7 @@ No real account registration occurs. Do not enter production credentials in the 
 
 For the new multi-field editor and synthetic handover flow, follow **docs/INTEGRATION_PROFILES.md**. Start with Northstar engineer → Integration profiles, then use an approver identity for the separate review steps. C-005 is the simplest eligible document for a synthetic manifest. No files are actually transferred.
 
-Version 0.3 also provides **Read connections** to owner test identities. Its fixture check needs no vendor access; live reads stay disabled unless you explicitly follow **docs/READ_CONNECTIONS.md** with approved test credentials and verified configuration. Full Autodesk OAuth sign-in/refresh and live file transfers are not implemented.
+Version 0.4 provides **Read connections** with Autodesk consent/app-only authorisation, explicit token renewal and named hub/project/folder selectors. Use **Run-ORBIT-Read-Tests.cmd** only for approved local read testing; it prompts for an explicit opt-in and an optional confirmed RedEye production hostname. The default **Run-ORBIT.cmd** still supports fixture checks without vendor credentials. Follow **docs/AUTODESK_AND_REDEYE_SETUP.md** for app registration and exact callback configuration. No live sign-in was verified during development, and file transfers remain disabled.
 
 ## Stop and start again
 

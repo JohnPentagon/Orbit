@@ -164,7 +164,7 @@ def test_restart_preserves_records_and_migrations(portal):
     sign_in(other)
     assert other.get("/api/projects/harbour/comparison").json()["id"] == item["id"]
     with sqlite3.connect(path) as c:
-        assert c.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 3
+        assert c.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 4
 
 
 def test_admin_grants_revoke_running_session_and_cannot_cross_tenants(portal):

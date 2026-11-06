@@ -1,4 +1,6 @@
-# Version 0.3 — bounded read-only connection testing
+# Read-only connection testing
+
+Current setup: [version 0.4 authorisation and named resource selectors](AUTODESK_AND_REDEYE_SETUP.md). This page documents the underlying read-adapter controls; the manual-token path below remains an advanced option.
 
 ## What is implemented
 
@@ -6,7 +8,7 @@ The owner-only **Read connections** screen configures separate, project-scoped r
 
 Implemented resources are Autodesk Data Management hubs, projects in a configured hub, top-level folders in a configured hub/project and folder contents in a configured project/folder; RedEye implements the documented artefact-list envelope only. Read operations use paths previously obtained from official Autodesk OpenAPI and the user-supplied RedEye API documentation. Tests use **hand-authored examples**, not vendor-recorded responses. There are no live test credentials in the code, download or tests, and no real vendor read was performed during development.
 
-These are first-page diagnostic reads, not exhaustive discovery, full synchronisation or a permission inventory. At most 25 resource identities/labels/types are displayed and response bytes are capped. No pagination URL, file URL or redirect is followed. No POST/PATCH/PUT/DELETE is sent to a provider. A successful operation establishes only that that specific read worked at that time; it does not verify every account, project or resource permission, or completeness of the returned register.
+These are first-page diagnostic reads, not exhaustive discovery, full synchronisation or a permission inventory. At most 25 resource identities/labels/types are displayed and response bytes are capped. No pagination URL, file URL or redirect is followed. No business-data POST/PATCH/PUT/DELETE is sent to a provider; the version 0.4 OAuth flow sends documented token-acquisition/renewal POST requests to the fixed APS authentication endpoint. A successful operation establishes only that that specific read worked at that time; it does not verify every account, project or resource permission, or completeness of the returned register.
 
 ## Try it without vendor access
 
@@ -27,14 +29,14 @@ Use only an account, resource scope and data set approved for this test, on your
 - Obtain a short-lived OAuth access token through your administrator's approved application process, with least-privilege documented access for the intended reads (the reviewed read contracts declare `data:read`). Membership, provisioning and folder access remain necessary independently of the scope string.
 - The API host is fixed to `https://developer.api.autodesk.com`.
 - Enter approved hub/project/folder IDs for the resources you plan to inspect. The backend enforces these configured IDs for project/folder-specific requests.
-- **ORBIT does not yet implement application registration, OAuth consent/callback, token exchange or automatic refresh.** A rejected/expired token requires a new approved test token obtained outside ORBIT. Do not use an untrusted third-party token generator.
+- APS application registration remains an administrator prerequisite. ORBIT now implements confidential-app consent/callback, app-only token exchange and explicit token renewal; use the version 0.4 setup guide instead of manually obtaining tokens. Automatic refresh is not implemented. The advanced manual-token path remains available; do not use an untrusted third-party token generator.
 
 ### RedEye
 
 - Ask the RedEye administrator/vendor for the actual test API host, API entitlement and bucket/resource permissions. The supplied public page lists localhost and QA examples, which are not proof of the customer's approved base URL.
 - Confirm the exact API-key header and whether the value has a prefix. API-key authentication is confirmed by the product owner; ORBIT deliberately does not invent its transport format or a token-issuance flow.
 - Ask about key creation, expiry/rotation and revocation, quotas, the list envelope/pagination and latest-approved-revision semantics.
-- Configure the exact hostname in the local operator allowlist. No wildcard or suffix matching is used. Store only an approved test key, never put it into the profile name, evidence field, URL or a chat message.
+- The documented QA hostname is an exact built-in preset. Configure any administrator-confirmed production hostname in the local operator allowlist. No wildcard or suffix matching is used. Store only an approved test key, never put it into the profile name, evidence field, URL or a chat message.
 
 ## Explicitly enable local reads
 
@@ -62,7 +64,7 @@ Local credential replacement/clearing increments its generation and clears the l
 
 ## Remaining scope
 
-Full Autodesk OAuth lifecycle, production ORBIT authentication, live contract verification, exhaustive bounded pagination, RedEye connection-specific bucket discovery, field discovery/import into integration mappings, durable jobs, complete file handovers, uploads and bidirectional execution remain unimplemented. The next verification step needs your authorised test environments and confirmed configuration—not secret values in chat.
+Production ORBIT authentication, live OAuth/contract verification, automatic renewal, exhaustive bounded pagination beyond the implemented project selector, RedEye connection-specific bucket discovery, field discovery/import into integration mappings, durable jobs, complete file handovers, uploads and bidirectional execution remain unimplemented. The next verification step needs your authorised test environments and confirmed configuration—not secret values in chat.
 
 ## Validation
 

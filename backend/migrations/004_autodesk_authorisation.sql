@@ -1,0 +1,4 @@
+CREATE TABLE autodesk_apps(connection_id TEXT PRIMARY KEY REFERENCES read_connections(id),client_id TEXT NOT NULL,client_secret_ciphertext TEXT NOT NULL,mode TEXT NOT NULL);
+CREATE TABLE autodesk_tokens(connection_id TEXT PRIMARY KEY REFERENCES read_connections(id),tokens_ciphertext TEXT NOT NULL);
+CREATE TABLE autodesk_states(state_hash TEXT PRIMARY KEY,connection_id TEXT NOT NULL REFERENCES read_connections(id),tenant_id TEXT NOT NULL,project_id TEXT NOT NULL,user_id TEXT NOT NULL,session_hash TEXT NOT NULL,browser_hash TEXT NOT NULL,verifier_ciphertext TEXT NOT NULL,generation INTEGER NOT NULL,expires INTEGER NOT NULL);
+CREATE TABLE autodesk_choices(connection_id TEXT NOT NULL REFERENCES read_connections(id),kind TEXT NOT NULL,parent TEXT NOT NULL,resources TEXT NOT NULL,generation INTEGER NOT NULL,expires INTEGER NOT NULL,PRIMARY KEY(connection_id,kind,parent));

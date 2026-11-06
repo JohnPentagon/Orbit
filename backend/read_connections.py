@@ -74,9 +74,31 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
         permit(who, "connection")
         with db() as c:
             scoped(c, who, project, connection)
+            c.execute("DELETE FROM autodesk_tokens WHERE connection_id=?", (connection,))
+            c.execute("DELETE FROM autodesk_states WHERE connection_id=?", (connection,))
+            c.execute("DELETE FROM autodesk_choices WHERE connection_id=?", (connection,))
             c.execute("UPDATE read_connections SET secret_ciphertext=?,generation=generation+1,last_result=NULL WHERE id=?", (vault.encrypt(body.secret.encode()).decode(), connection))
             audit(c, who, "read_connection.credential_replaced", project, connection)
         return {"credential_present": True}
+
+    @app.put("/api/projects/{project}/read-connections/{connection}/configuration")
+    def update_configuration(project: str, connection: str, body: ReadConnection, who=Depends(identity)):
+        permit(who, "connection")
+        if body.provider == "forma" and body.base_url != "https://developer.api.autodesk.com":
+            raise HTTPException(422, "Use the documented Autodesk API host")
+        try:
+            auth_headers(body.provider, "synthetic-validation-only", body.auth_header, body.auth_prefix)
+        except ProviderError as e:
+            raise HTTPException(422, e.message)
+        with db() as c:
+            row = scoped(c, who, project, connection)
+            if row["provider"] != body.provider:
+                raise HTTPException(409, "Create a separate connection to change provider")
+            for table in ["autodesk_tokens", "autodesk_states", "autodesk_choices"]:
+                c.execute(f"DELETE FROM {table} WHERE connection_id=?", (connection,))
+            c.execute("UPDATE read_connections SET name=?,configuration=?,secret_ciphertext=NULL,generation=generation+1,last_result=NULL WHERE id=?", (body.name, body.model_dump_json(), connection))
+            audit(c, who, "read_connection.settings_revised", project, connection)
+        return {"saved": True, "reauthorisation_required": True}
 
     @app.post("/api/projects/{project}/read-connections/{connection}/fixture-check")
     def fixture_check(project: str, connection: str, who=Depends(identity)):
@@ -96,6 +118,9 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
         permit(who, "connection")
         with db() as c:
             scoped(c, who, project, connection)
+            c.execute("DELETE FROM autodesk_tokens WHERE connection_id=?", (connection,))
+            c.execute("DELETE FROM autodesk_states WHERE connection_id=?", (connection,))
+            c.execute("DELETE FROM autodesk_choices WHERE connection_id=?", (connection,))
             c.execute("UPDATE read_connections SET secret_ciphertext=NULL,generation=generation+1,last_result=NULL WHERE id=?", (connection,))
             audit(c, who, "read_connection.credential_cleared", project, connection)
         return {"credential_present": False, "vendor_revoked": False}

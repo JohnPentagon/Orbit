@@ -102,7 +102,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.3.0")
+    app = FastAPI(title="ORBIT foundation", version="0.4.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -152,11 +152,12 @@ def create_app(db_path=None, demo=None):
         user_id: str
 
     @app.post("/api/demo/session")
-    def login(body: Login, response: Response):
+    def login(body: Login, response: Response, request: Request):
         with db() as c:
             row = c.execute("SELECT * FROM memberships WHERE user_id=?", (body.user_id,)).fetchone()
             if not row:
                 raise HTTPException(401, "Unknown test identity")
+            c.execute("DELETE FROM sessions WHERE token_hash=?", (hashlib.sha256(request.cookies.get("orbit_session", "").encode()).hexdigest(),))
             token = secrets.token_urlsafe(32)
             c.execute("INSERT INTO sessions VALUES(?,?,?,?)", (hashlib.sha256(token.encode()).hexdigest(), row["user_id"], row["tenant_id"], int(time.time()) + 3600))
             audit(c, dict(row), "demo.sign_in")
@@ -303,6 +304,8 @@ def create_app(db_path=None, demo=None):
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections
     register_read_connections(app, db, identity, permit, project_check, audit, vault, now)
+    from backend.autodesk_auth import register_autodesk
+    register_autodesk(app, db, identity, permit, project_check, audit, vault, now)
 
     dist = ROOT / "frontend/dist"
     if dist.exists():
