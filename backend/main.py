@@ -102,7 +102,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.4.2")
+    app = FastAPI(title="ORBIT foundation", version="0.4.3")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -141,7 +141,7 @@ def create_app(db_path=None, demo=None):
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "mode": "synthetic-development", "live_connectors": False}
+        return {"status": "ok", "mode": "synthetic-development", "live_connectors": False, "server_version": app.version}
 
     @app.get("/api/demo/identities")
     def identities():

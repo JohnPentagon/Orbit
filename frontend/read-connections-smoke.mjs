@@ -15,7 +15,7 @@ try{
  assert.equal(await page.getByLabel('Read API base URL').inputValue(),'https://qa-api.redeyedms.com');
  await page.getByLabel('Read provider').selectOption('forma');
  await page.getByLabel('Test connection name').fill('Read adapter fixture '+Date.now());
- await page.getByRole('button',{name:'Save unverified connection',exact:true}).click();
+ await page.getByRole('button',{name:'Create connection',exact:true}).click();
  await page.getByText('Configuration saved as unverified. No vendor request occurred.').waitFor();
  const row=page.locator('.read-connection').last();
  await row.getByRole('button',{name:'Run fixture check',exact:true}).click();
@@ -30,7 +30,7 @@ try{
  await page.getByText('Local credential removed. Revoke the key or token with the vendor separately.').waitFor();
  await page.getByLabel('Read provider').selectOption('redeye');
  await page.getByLabel('Test connection name').fill('RedEye lookup fixtures '+Date.now());
- await page.getByRole('button',{name:'Save unverified connection',exact:true}).click();
+ await page.getByRole('button',{name:'Create connection',exact:true}).click();
  await page.getByText('Configuration saved as unverified. No vendor request occurred.').waitFor();
  const redeye=page.locator('.read-connection').last();
  await redeye.getByRole('button',{name:'Fixture groups',exact:true}).click();

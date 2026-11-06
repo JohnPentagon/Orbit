@@ -1,5 +1,6 @@
 """Explicit local test-access gate; no live calls are made by fixture checks."""
 import json
+import logging
 import os
 from typing import Literal
 from uuid import uuid4
@@ -37,6 +38,40 @@ class Secret(BaseModel):
 
 
 def register_read_connections(app, db, identity, permit, project_check, audit, vault, now):
+    def blocked(connection, code, message, action):
+        logging.getLogger("uvicorn.error").warning("ORBIT read blocked: connection=%s reason=%s", connection, code)
+        raise HTTPException(409, {"code": code, "message": message, "next_action": action})
+
+    def readiness(row):
+        cfg = json.loads(row["configuration"])
+        issues = []
+        def issue(code, message, action):
+            issues.append({"code": code, "message": message, "next_action": action})
+        if os.getenv("ORBIT_ENABLE_LIVE_READS") != "1":
+            issue("live_reads_disabled", "Live reads are disabled in this server process.", "Stop the old server, use Run-ORBIT-Read-Tests.cmd and type ENABLE.")
+        if not cfg.get("vendor_settings_confirmed"):
+            issue("vendor_settings_unconfirmed", "This saved connection has not confirmed vendor settings.", "Click Edit setup on this card, confirm the vendor settings and save the revision.")
+        if not cfg.get("approved_test_access"):
+            issue("test_access_unconfirmed", "This saved connection has not confirmed authorised test access.", "Click Edit setup on this card, confirm approved test access and save the revision.")
+        if not str(cfg.get("evidence_note", "")).strip():
+            issue("evidence_missing", "This saved connection has no non-secret evidence reference.", "Add the administrator approval or reference-client note under Edit setup.")
+        if not row["secret_ciphertext"]:
+            issue("credential_missing", "This saved connection has no credential.", "After saving setup changes, use Set test credential on this same card.")
+        else:
+            try:
+                value = vault.decrypt(row["secret_ciphertext"].encode()).decode()
+                auth_headers(row["provider"], value, cfg["auth_header"], cfg["auth_prefix"])
+            except ProviderError as error:
+                issue(error.code, error.message, "Replace the test credential without extra line breaks and verify its header/prefix.")
+            except Exception:
+                issue("credential_unreadable", "The stored credential cannot be decrypted with this installation's vault key.", "Restore the matching .local vault key or clear and replace the credential; do not delete your database.")
+        hosts = [h.strip().lower() for h in os.getenv("ORBIT_REDEYE_ALLOWED_HOSTS", "").split(",") if h.strip()]
+        try:
+            approved_base(row["provider"], cfg["base_url"], hosts)
+        except ProviderError as error:
+            issue(error.code, error.message, "Verify the saved API URL. For a custom host use the read-test launcher; for an older running backend restart the updated server.")
+        return {"ready": not issues, "issues": issues}
+
     def scoped(c, who, project, connection):
         project_check(c, who, project)
         row = c.execute("SELECT * FROM read_connections WHERE id=? AND tenant_id=? AND project_id=?", (connection, who["tenant_id"], project)).fetchone()
@@ -49,8 +84,13 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
         permit(who, "connection")
         with db() as c:
             project_check(c, who, project)
-            rows = c.execute("SELECT id,name,provider,configuration,generation,last_result,(secret_ciphertext IS NOT NULL) AS credential_present FROM read_connections WHERE tenant_id=? AND project_id=?", (who["tenant_id"], project)).fetchall()
-        return {"live_reads_enabled": os.getenv("ORBIT_ENABLE_LIVE_READS") == "1", "connections": [{**dict(r), "configuration": json.loads(r["configuration"]), "last_result": json.loads(r["last_result"]) if r["last_result"] else None} for r in rows]}
+            rows = c.execute("SELECT * FROM read_connections WHERE tenant_id=? AND project_id=?", (who["tenant_id"], project)).fetchall()
+        public = []
+        for row in rows:
+            item = {key: row[key] for key in ["id", "name", "provider", "generation"]}
+            item.update(configuration=json.loads(row["configuration"]), last_result=json.loads(row["last_result"]) if row["last_result"] else None, credential_present=bool(row["secret_ciphertext"]), readiness=readiness(row))
+            public.append(item)
+        return {"server_version": app.version, "live_reads_enabled": os.getenv("ORBIT_ENABLE_LIVE_READS") == "1", "connections": public}
 
     @app.post("/api/projects/{project}/read-connections")
     def create(project: str, body: ReadConnection, who=Depends(identity)):
@@ -135,25 +175,23 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
         with db() as c:
             row = scoped(c, who, project, connection)
             cfg = json.loads(row["configuration"])
-            if os.getenv("ORBIT_ENABLE_LIVE_READS") != "1":
-                raise HTTPException(409, "Live reads are disabled. The local operator must explicitly enable approved test access.")
-            if not cfg["approved_test_access"] or not cfg["vendor_settings_confirmed"] or not cfg["evidence_note"].strip():
-                raise HTTPException(409, "Confirm vendor settings, test authorisation and a non-secret evidence reference first")
-            if not row["secret_ciphertext"]:
-                raise HTTPException(409, "Credential is missing")
+            report = readiness(row)
+            if report["issues"]:
+                first = report["issues"][0]
+                blocked(connection, first["code"], first["message"], first["next_action"])
             required = {"projects": ["hub"], "folders": ["hub", "project"], "documents": ["project", "folder"]}.get(body.operation, [])
             scope_values = {"hub": cfg["hub"], "project": cfg["vendor_project"], "folder": cfg["folder"]}
             for field in required:
                 if not scope_values[field] or getattr(body, field) != scope_values[field]:
-                    raise HTTPException(409, "Resource scope must match the IDs configured for this test connection")
+                    blocked(connection, "resource_scope_mismatch", "Resource scope does not match this saved connection.", "Use the current Autodesk discovery selectors and save the selection again.")
             hosts = [h.strip().lower() for h in os.getenv("ORBIT_REDEYE_ALLOWED_HOSTS", "").split(",") if h.strip()]
             try:
                 base = approved_base(row["provider"], cfg["base_url"], hosts)
                 secret = vault.decrypt(row["secret_ciphertext"].encode()).decode()
             except ProviderError as e:
-                raise HTTPException(409, e.message)
+                blocked(connection, e.code, e.message, "Verify the API URL and local host allowlist.")
             except Exception:
-                raise HTTPException(409, "Stored credential could not be decrypted; replace it securely")
+                blocked(connection, "credential_unreadable", "Stored credential could not be decrypted.", "Clear and replace the local credential using the correct vault key.")
             generation = row["generation"]
             audit(c, who, "read_connection.read_requested", project, f"{connection}: {body.operation}")
         try:
@@ -171,7 +209,7 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
                 raise HTTPException(403, "Membership changed during read")
             permit({**who, "role": membership["role"]}, "connection")
             if current["generation"] != generation:
-                raise HTTPException(409, "Credential changed during read; response discarded")
+                blocked(connection, "credential_changed", "Credential changed during read; response discarded.", "Retry once the connection changes have finished.")
             summary = {k: v for k, v in result.items() if k != "resources"}
             c.execute("UPDATE read_connections SET last_result=? WHERE id=?", (json.dumps(summary), connection))
             audit(c, who, "read_connection.read_completed", project, f"{connection}: {body.operation}, {result['returned']} resources; no import")

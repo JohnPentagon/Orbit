@@ -29,7 +29,7 @@ try{
  await page.getByLabel('Non-secret evidence / administrator reference').fill('Synthetic UI test only');
  await page.getByLabel('I have confirmed the vendor host and authentication settings').check();
  await page.getByLabel('This account and resource scope are authorised for testing').check();
- await page.getByRole('button',{name:'Save unverified connection',exact:true}).click();
+ await page.getByRole('button',{name:'Create connection',exact:true}).click();
  const row=page.locator('.read-connection').filter({has:page.getByRole('heading',{name,exact:true})});
  await row.getByLabel('APS client ID',{exact:true}).fill('synthetic-client');
  await row.getByLabel('APS client secret',{exact:true}).fill('synthetic-ui-secret');

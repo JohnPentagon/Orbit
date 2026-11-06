@@ -4,6 +4,8 @@
 
 ## Implemented
 
+Version 0.4.3: per-card saved confirmation/readiness reports, structured read-block reasons and next actions, inline per-connection failures, safe terminal diagnostics, explicit create-versus-edit labels and running backend version checks. 102 backend tests plus diagnostic and read-connection browser checks passed. This fixes diagnosis/error placement; no customer's specific 409 is claimed resolved without its local reason message. See READ_CONNECTION_DIAGNOSTICS.md.
+
 Version 0.4.2: reference DTO-backed RedEye envelope variants and read-only group/metadata-key operations; observed response-shape display; strict ambiguous/malformed-contract rejection; reference artefact title handling. Resolver weaknesses are documented rather than ported as automated decisions. 95 backend tests and the expanded fixture-only read-connection browser flow validate the bounded change. See REDEYE_RESOLVERS_AND_MODELS.md.
 
 Version 0.4.1: RedEye connection defaults now reflect the owner-supplied C# reference client (`https://api.redeyedms.com`, `Authorization: Bearer <apiKey>`), with QA separately labelled. The URL is constructor-overridable and no live key was tested. Model/resolver files are needed before resolving response-envelope differences. All 83 backend tests, TypeScript/build and the updated read-connection browser smoke passed. See REDEYE_REFERENCE_CLIENT.md.

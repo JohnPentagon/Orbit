@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.4.3 adds [saved-connection readiness and inline 409 diagnostics](docs/READ_CONNECTION_DIAGNOSTICS.md), safe terminal reason codes and frontend/backend version mismatch warnings. The exact local failed check is now visible on the connection card instead of hidden at the bottom of the page.
+
 Version 0.4.2 adds explicit [RedEye resolver/model contract support](docs/REDEYE_RESOLVERS_AND_MODELS.md): artefact `items`/`results`, raw-array/`items` group and metadata-key lookups, title display and observed-shape reporting. Group/key reads and fixture checks are available in Read connections. No natural-language resolver, group filter or live-mapping import is enabled.
 
 Version 0.4.1 incorporates the [owner-supplied RedEye client evidence](docs/REDEYE_REFERENCE_CLIENT.md): the overridable utility-default API host and bearer API-key format are now prefilled. Response-envelope and resolver behaviour remain to be checked before changing parsing.
@@ -69,6 +71,7 @@ node smoke.mjs
 node integration-smoke.mjs
 node read-connections-smoke.mjs
 node autodesk-setup-smoke.mjs
+node readiness-smoke.mjs
 ```
 
 Browser smoke requires the server above running and Chromium at `/usr/bin/chromium`, or `CHROMIUM_PATH` set to its executable. It uses only synthetic data and creates comparison/proposal/audit records in the local demo database. It checks comparison, approval, viewer restrictions, tenant switching, mobile overflow and JavaScript errors. Screenshots are written under ignored `.local/screenshots/`.
