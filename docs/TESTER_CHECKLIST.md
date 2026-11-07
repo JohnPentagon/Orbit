@@ -62,11 +62,24 @@ Current Meridian support: saved preparation records and a hand-authored Explorer
 
 - [x] Automated and browser checks validate local definition/value imports, explicit overwrite, exact approval, read-back, persistence and quality findings against synthetic destinations.
 - [ ] Owner tries the Parameter imports workflow locally with chosen bSDD properties, including definitions-only and optional values.
+- [ ] Confirm the chosen organisation, project, connection ID and environment before approving an import. Local synthetic connections and real read-test connections are separate destinations.
+- [ ] Verify an approved local import changes only its selected connection; a second connection/project/organisation remains unchanged.
+- [ ] Test definitions-only import: expected parameters appear, and document values remain unchanged.
+- [ ] Test optional values on exact selected documents; unselected documents and unrelated parameters remain unchanged.
+- [ ] Verify existing values are preserved with overwrite off; enable overwrite explicitly and confirm only the approved values change.
 - [ ] Confirm project naming, supported types, required values and units before enabling a real destination.
+- [ ] Check missing required values, incompatible types, disallowed values and units produce clear findings or blockers; successful field creation alone must not imply complete data quality.
+- [ ] Change the dictionary, destination generation or document state after preview/approval and confirm a new review is required.
 - [ ] RedEye: administrator confirms how metadata keys are created; verify current versus approved revision targeting, merge/replacement and write permissions in a sandbox.
 - [ ] ACC: verify custom-attribute definition creation and version-value APIs, folder inheritance, supported types and write-scoped app/user access.
 - [ ] Meridian: supply installed .NET/Connection API write contract, vault privileges and execution/identity route.
 - [ ] Implement and sandbox-test each real writer with preconditions, partial failures, read-back, idempotency and reconciliation before remote execution is enabled.
+- [ ] For each real connector separately, verify imported definitions in the vendor UI and API in the exact approved project/folder/vault or bucket scope.
+- [ ] For each real connector separately, write an approved test value and read it back from the same document/asset and revision; compare with the vendor UI.
+- [ ] Verify real writes are denied for insufficient permissions or a different connection/project, and that unrelated records/parameters remain unchanged.
+- [ ] Test failed/partial writes, interruption and retry without duplicate fields, repeated changes or a false success receipt.
+
+Current behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
 
 Real destinations remain blocked. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
 
