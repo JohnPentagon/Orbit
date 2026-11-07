@@ -23,7 +23,7 @@ try{
  assert.match(await card.innerText(),/blocked/);
  await card.getByRole('button',{name:'Preview Explorer fixture',exact:true}).click();
  await page.getByRole('heading',{name:'Meridian Explorer · SYNTHETIC FIXTURE',exact:true}).waitFor();
- assert.match(await card.innerText(),/0\/11 checks passed/);
+ assert.match(await card.innerText(),/0\/15 checks passed/);
  await page.reload();
  await page.getByRole('button',{name:'Connection preparation',exact:true}).click();
  card=page.locator('.read-connection').filter({has:page.getByRole('heading',{name,exact:true})});
@@ -37,7 +37,7 @@ try{
  await page.getByLabel('Planned API URL',{exact:true}).fill('https://other.internal.example/BCEnterprise');
  await page.getByRole('button',{name:'Save plan revision',exact:true}).click();
  await page.getByText(/previous checks were reset to untested/).waitFor();
- assert.match(await card.innerText(),/0\/11 checks passed/);
+ assert.match(await card.innerText(),/0\/15 checks passed/);
  const downloadPromise=page.waitForEvent('download');
  await page.getByRole('button',{name:'Export checklist',exact:true}).click();
  const download=await downloadPromise;assert.equal(download.suggestedFilename(),'orbit-harbour-connection-checklist.json');

@@ -137,7 +137,7 @@ def test_fixed_api_host_headers_query_and_no_credentials():
     def handler(request):
         seen.append(request)
         assert request.url.host=='api.bsdd.buildingsmart.org' and request.url.scheme=='https'
-        assert request.headers['user-agent']=='ORBIT/0.7.0'
+        assert request.headers['user-agent']=='ORBIT/0.8.0'
         assert 'authorization' not in request.headers and 'cookie' not in request.headers
         assert request.url.params['Uri']==URI
         return httpx.Response(200,json={'dictionaries':[DICTIONARY],'offset':0,'count':1,'totalCount':1})

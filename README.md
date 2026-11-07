@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.8 adds **Additional connections**: Procore company/project selection and field-definition inventory, optional Meridian Explorer Windows-authenticated reads, and administrator-configured Maintenance Connection/custom REST reads. Encrypted credentials, exact-origin opt-in, scope/generation checks, manual per-connection field bindings and non-executable Procore definition proposals prepare real imports. Revit/Navisworks/custom preparation options and parameter acceptance checks are included. Customer/Windows validation and all remote parameter writers remain pending. See [additional connection setup](docs/ADDITIONAL_CONNECTIONS.md).
+
 Version 0.7 adds **Parameter imports**: immutable bSDD-backed definition/value previews, explicit overwrite policy, typed/allowed-value/unit checks, separate review and local test execution with transactional read-back. Imported local parameter registers include a bounded required-value/type quality check. Real connections produce blocked review packages; **no live platform parameter writer is implemented**. See [parameter imports and platform prerequisites](docs/PARAMETER_IMPORTS.md).
 
 Version 0.6 adds optional **bSDD dictionaries** per project: live public dictionary/version selection or verified identifier URL, class/property browsing, saved property definitions and destination-field suggestions in the mapping editor. See [bSDD setup and verified connectivity](docs/BSDD_SETUP.md). No API key is required for these public reads.

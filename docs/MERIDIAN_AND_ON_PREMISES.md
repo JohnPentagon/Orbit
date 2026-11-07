@@ -36,7 +36,7 @@ Important mapping distinctions:
 - Explorer data may be a synchronised/published repository. Its freshness and visibility must be established before drawing conclusions about current vault contents.
 - The GetDocuments parameter description calls `PAGEINDEX` a starting document index, whereas its response description calls `PageIndex` a page number. Resolve this against installed API behaviour rather than assume offset or page semantics. `ActualCount` alone is not proof that ORBIT has retrieved a full register.
 
-Implemented: `backend/meridian.py` validates the documented response shape, bounds display to 25, preserves document/version/revision separation and scalar metadata types, and excludes download/viewer links. An owner can preview a **hand-authored fixture** from a saved Meridian preparation plan. There is no Meridian network transport or authentication handler.
+Initial version 0.5 groundwork: `backend/meridian.py` validates the documented response shape, bounds display to 25, preserves document/version/revision separation and scalar metadata types, and excludes download/viewer links. An owner can preview a **hand-authored fixture** from a saved Meridian preparation plan. That initial increment had no Meridian network transport or authentication handler; see the version 0.8 update below for the optional Explorer reader.
 
 ## API Service prerequisites and uncertainties
 
@@ -64,3 +64,7 @@ Preparation records allow HTTPS URLs with virtual paths/custom ports as referenc
 ## What can be supplied later
 
 When convenient: exact product and release/patch, enabled components/licence, administrator-confirmed API interface/docs/base URL, vault/repository/view/filter references, authentication scheme and least-privilege account requirements, and network/certificate constraints. No production secrets or sample customer files are needed to maintain the preparation plan.
+
+## Version 0.8 implementation update
+
+Additional connections now provides an optional first-response Explorer GET adapter using the current Windows process identity via SSPI with delegation disabled. It is constrained to the saved HTTPS application/view/filter and an exact operator-approved origin. No Windows password is stored. Actual SSPI/Windows deployment validation is still pending; Mobile/.NET/Connection API writes, Portal/Cloud and any private worker remain unimplemented. See ADDITIONAL_CONNECTIONS.md.

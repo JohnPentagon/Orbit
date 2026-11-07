@@ -47,7 +47,7 @@ Evidence: owner reported “connection confirmed” and “they all worked” in
 - [ ] Where Mobile API Service applies, administrator validates its documented health endpoint and installed API version.
 - [ ] Once a real adapter exists, test authorised/denied views, empty/paged results, expiry, timeout and unavailable server.
 
-Current Meridian support: saved preparation records and a hand-authored Explorer response preview only. No network adapter, login, private worker, API discovery or writes. A fixture preview never marks a manual test passed.
+Current Meridian support: saved preparation records, an offline Explorer preview and an optional Windows-authenticated first-response Explorer read adapter. Actual Windows/customer validation, other Meridian interfaces, private workers and all remote writes remain pending. A fixture preview never marks a manual test passed.
 
 ## bSDD public reference
 
@@ -82,6 +82,23 @@ Current Meridian support: saved preparation records and a hand-authored Explorer
 Current behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
 
 Real destinations remain blocked. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+
+## Additional connections — version 0.8
+
+- [x] Official Procore company/project/custom-field OpenAPI contracts retrieved; backend fixtures validate headers, arrays/wrappers, IDs, scopes and paging.
+- [x] Backend checks validate encrypted credentials, exact-origin gates, no redirect following, bounded responses, stale generation/permission rejection and non-executable parameter proposals.
+- [x] Isolated browser tests validate named scope selection, field inventory, configured REST reads, manual bindings, credential invalidation and viewer/mobile controls using provider JSON fixtures.
+- [ ] On Windows, test the updated read launcher with exact additional HTTPS origins and verify its environment is restored after exit.
+- [ ] Procore: supply an authorised OAuth access token; test company/project dropdowns, paging, denied scopes, token expiry/replacement and field inventory for the intended company/tool context.
+- [ ] Procore: review any definition proposal against duplicates, native types, field-set/project applicability and required-value rules. No proposal is executable yet.
+- [ ] Meridian: install/test optional Windows auth dependencies on the actual executor; confirm the current process identity, AD/Explorer permissions, API application path, view/filter, proxy/private route and CA trust.
+- [ ] Meridian: compare returned document/version IDs with Explorer; verify repository freshness. Resolve paging semantics before treating the sample as a complete register.
+- [ ] Maintenance Connection: obtain the installed edition/version/licence and exact API/auth/response contract; configure and test the bounded reader against that approved scope.
+- [ ] Custom/on-premises REST: verify saved path, query filters and JSON pointers; test missing wrappers, empty lists, private CA and permission failures. A configured filter alone does not prove isolation.
+- [ ] Verify per-connection field bindings reference the intended bSDD/native IDs and scope; review packages must remain blocked from remote execution until the writer and native inventory semantics are verified.
+- [ ] For each 2024+ Revit/Navisworks release, complete the new desktop preparation checks. Neither desktop bridge has been implemented.
+
+These items are also available per connection under Connection preparation. Added parameter-definition/value/read-back/recovery tests default to untested on existing plans; manual marks do not enable adapters or remote writes.
 
 ## Other connectors and desktop versions
 

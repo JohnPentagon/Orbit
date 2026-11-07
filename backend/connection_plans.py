@@ -15,24 +15,48 @@ COMMON_CHECKS = [
     ("scope", "Allowed resources visible; denied resources remain inaccessible"),
     ("paging", "Pagination, empty results, rate limits and expired credentials tested"),
     ("mapping", "Document identity, revisions, metadata types and missing values reviewed"),
+    ("parameter_definitions", "Verify definition creation/reuse in the exact destination scope; a review package is not proof of import"),
+    ("parameter_values", "Verify optional values affect only selected records and preserve existing values by default"),
+    ("parameter_readback", "Read back written values from the intended document/asset and revision; confirm in vendor UI"),
+    ("parameter_recovery", "Test permission denial, stale approval, partial failures and retry without duplicate fields or changes"),
 ]
 CATALOGUE = {
+    "revit": {
+        "name": "Revit 2024+", "stage": "Preparation only — desktop add-in not implemented",
+        "summary": "Record each installed Revit release, SDK/runtime and document/category/instance-versus-type parameter requirements. No model is opened or changed.",
+        "interfaces": ["Undecided", "Revit desktop add-in", "Reviewed offline parameter package"],
+        "checks": [("release", "Record and test each installed 2024+ release and matching SDK/runtime"), ("bindings", "Review shared parameter GUIDs, categories, units and instance/type bindings"), *COMMON_CHECKS],
+        "sources": [{"label": "Official Revit help", "url": "https://help.autodesk.com/view/RVT/2024/ENU/"}],
+    },
+    "navisworks": {
+        "name": "Navisworks 2024+", "stage": "Preparation only — desktop bridge not implemented",
+        "summary": "Identify source-file properties versus user-defined properties, supported editing API and installed release. Do not assume changing a source property updates its authoring model.",
+        "interfaces": ["Undecided", "Navisworks desktop bridge", "Reviewed offline property package"],
+        "checks": [("release", "Record and test each installed 2024+ release and SDK/runtime"), ("ownership", "Identify editable user-data properties versus read-only source properties and authoring-system ownership"), *COMMON_CHECKS],
+        "sources": [{"label": "Official Navisworks help", "url": "https://help.autodesk.com/view/NAV/2024/ENU/"}],
+    },
+    "generic": {
+        "name": "Custom REST / on-premises API", "stage": "Configured GET reader — administrator contract required",
+        "summary": "Configure an approved HTTPS API, encrypted header credential and bounded JSON response mapping under Additional connections. No arbitrary write endpoint is enabled.",
+        "interfaces": ["Undecided", "Administrator-confirmed REST API"],
+        "checks": [("contract", "Record exact API release, response mapping, resource scope and authorised authentication scheme"), *COMMON_CHECKS], "sources": [],
+    },
     "meridian": {
-        "name": "Meridian Enterprise / PowerWeb", "stage": "Preparation only — no live adapter",
+        "name": "Meridian Enterprise / PowerWeb", "stage": "Explorer read adapter — Windows/customer validation pending",
         "summary": "PowerWeb is an IIS-hosted Enterprise client. Select a documented integration interface separately; a PowerWeb URL is not an API base URL.",
         "interfaces": ["Undecided", "Explorer Web API (read)", "Meridian API Service (Mobile)", ".NET / Connection API", "Meridian Portal / Cloud (separate product)"],
         "checks": [("edition", "Confirm Enterprise versus Portal/Cloud, installed release (2024+) and patch"), ("interface", "Administrator supplies version-matched interface documentation and installed API URL"), ("repository", "Confirm vault/repository/view mapping and Explorer synchronisation freshness"), ("auth_contract", "Confirm API login/token or Windows identity contract; browser SSO is not assumed reusable"), ("health", "Administrator validates documented API health route where applicable"), *COMMON_CHECKS],
         "sources": [{"label": "PowerWeb architecture", "url": MERIDIAN_HELP + "AdminGuide/Architecture/PowerWeb.htm"}, {"label": "Explorer Web API", "url": MERIDIAN_HELP + "Enterprise_Server/Explorer/WebAPI/Web_API_reference.htm"}, {"label": "API Service installation", "url": MERIDIAN_HELP + "AdminGuide/Installation/MeridianAPI_Service_Install.htm"}, {"label": ".NET / Connection API documentation", "url": MERIDIAN_HELP + "Common/API_LandingPage.htm"}],
     },
     "procore": {
-        "name": "Procore", "stage": "Preparation only — no live adapter",
+        "name": "Procore", "stage": "Company/project read adapter — customer token validation pending",
         "summary": "Confirm the approved developer application, OAuth flow, company/project permissions and sandbox before implementing discovery.",
         "interfaces": ["Undecided", "Procore REST API"],
         "checks": [("application", "Developer app, redirect URI and sandbox/customer installation confirmed"), ("company", "Company and project scope, document permissions and API entitlements confirmed"), *COMMON_CHECKS],
         "sources": [{"label": "Official developer documentation", "url": "https://developers.procore.com/documentation/introduction"}],
     },
     "maintenance_connection": {
-        "name": "Accruent Maintenance Connection", "stage": "Preparation only — no live adapter",
+        "name": "Accruent Maintenance Connection", "stage": "Configured REST reader — administrator API contract required",
         "summary": "Separate product from Meridian. Establish hosted/on-premises edition, licensed API contract and asset/document relationships with the administrator.",
         "interfaces": ["Undecided", "Administrator-confirmed API"],
         "checks": [("edition", "Hosted/on-premises edition, release and licensed API documentation confirmed"), ("assets", "Asset identifiers and document/attachment relationships reviewed"), *COMMON_CHECKS],
@@ -64,7 +88,7 @@ class CheckResult(BaseModel):
 class Plan(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=100)
-    provider: Literal["meridian", "procore", "maintenance_connection", "forma", "redeye"]
+    provider: Literal["meridian", "procore", "maintenance_connection", "forma", "redeye", "revit", "navisworks", "generic"]
     product_version: str = Field(default="", max_length=100)
     deployment: Literal["undecided", "cloud", "on_premises", "hybrid"] = "undecided"
     interface: str = Field(default="Undecided", max_length=100)

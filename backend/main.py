@@ -26,6 +26,20 @@ PROVIDERS = [
     for key, name in [("forma", "Autodesk Forma / ACC Docs"), ("redeye", "Accruent RedEye"), ("procore", "Procore"), ("meridian", "Accruent Meridian"), ("maintenance", "Maintenance Connection"), ("revit", "Revit 2024+"), ("navisworks", "Navisworks 2024+"), ("generic", "Custom REST / files")]
 ]
 
+# Catalogue describes implemented adapters, never a customer's verified access.
+for provider in PROVIDERS:
+    provider['maturity'] = {
+        'forma': 'Bounded metadata reader; customer OAuth validation pending',
+        'redeye': 'Bounded metadata reader; initial reads reported successful',
+        'procore': 'Company/project/field reader; customer validation pending',
+        'meridian': 'Explorer reader; Windows and customer validation pending',
+        'maintenance': 'Configured REST reader; administrator contract required',
+        'generic': 'Configured REST reader; administrator contract required',
+        'revit': 'Preparation only; desktop add-in not implemented',
+        'navisworks': 'Preparation only; desktop bridge not implemented',
+    }[provider['id']]
+    provider['live_reads'] = provider['id'] not in {'revit', 'navisworks'}
+
 def now():
     return datetime.now(timezone.utc).isoformat()
 
@@ -102,7 +116,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.7.0")
+    app = FastAPI(title="ORBIT foundation", version="0.8.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -304,6 +318,8 @@ def create_app(db_path=None, demo=None):
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections
     register_read_connections(app, db, identity, permit, project_check, audit, vault, now)
+    from backend.additional_connections import register_additional_connections
+    register_additional_connections(app, db, identity, permit, project_check, audit, vault, now)
     from backend.parameter_imports import register_parameter_imports
     register_parameter_imports(app, db, identity, permit, project_check, audit, now)
     from backend.bsdd import register_bsdd

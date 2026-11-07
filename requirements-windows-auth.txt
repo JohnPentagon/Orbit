@@ -1,0 +1,4 @@
+# Optional only: install with ORBIT's local Windows .venv Python.
+# This file is not installed by the normal cross-platform setup.
+requests==2.34.2; sys_platform == 'win32'
+requests-negotiate-sspi==0.5.2; sys_platform == 'win32'

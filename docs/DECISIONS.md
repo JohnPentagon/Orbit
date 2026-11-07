@@ -37,3 +37,9 @@ Use the versioned public REST API, not direct identifier fetching or demonstrati
 ## 7 November 2026 — parameter provisioning and values
 
 Separate definition import from optional value updates. Bind a reviewed bSDD/property and destination snapshot to each immutable job, preserve existing values by default, and verify applied local state by read-back in one transaction. Keep required-value quality distinct from successful definition creation. Real destinations are review-only until their definition/value/revision/concurrency contracts are established; the RedEye current-versus-approved distinction prevents assuming a read proves the intended write target. Do not represent ORBIT review JSON as a native vendor import.
+
+## 7 November 2026 — remaining connection readers and write preparation
+
+Implement bounded documented Procore metadata reads and scoped named selection. Use Windows SSPI only for confirmed Meridian Explorer API access on an authorised executor; keep other Meridian interfaces distinct. Where Maintenance/custom contracts are unknown, require explicit administrator URL/auth/JSON mapping rather than invent vendor endpoints. Keep desktop options as version/SDK preparation until real bridges exist.
+
+Include per-connection native field references and scope in parameter review snapshots. Procore's published definition schema can produce review-only proposals for direct types; do not silently weaken integer, units, list or enum constraints. Company definitions, field-set applicability and record values remain separate capabilities. No write-enable flag bypass is introduced.

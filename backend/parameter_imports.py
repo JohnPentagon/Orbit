@@ -17,6 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from backend.integrations import canonical, digest
 
 CAPABILITIES = {
+    'procore': {'reason': 'Company-level custom-field definition APIs are documented. Tool/field-set applicability, document or asset value targeting, write permissions, concurrency and read-back still require a verified writer.', 'source': 'https://developers.procore.com/reference/rest/custom-fields?version=2.0'},
+    'maintenance_connection': {'reason': 'The configured REST reader does not establish field creation or value-update semantics. Obtain the installed edition/API write contract and sandbox evidence.', 'source': 'https://help.maintenanceconnection.com/'},
     'forma': {'reason': 'ACC custom-attribute creation, folder scope, supported types and version-specific value updates need a verified write adapter and write-scoped OAuth consent.', 'source': 'https://aps.autodesk.com/en/docs/acc/v1/overview/introduction/'},
     'redeye': {'reason': 'Documented POST /api/v1/artefacts/{Id} updates metadata on the current revision; GET describes latest approved revision. No metadata-key creation operation is documented in the reviewed API. Confirm revision targeting, key administration, merge and retry semantics before enabling writes.', 'source': 'https://api.redeyedms.com/#updateartefact'},
     'meridian': {'reason': 'PowerWeb is a client, not a generic write API. Explorer documentation establishes reads; the installed .NET/Connection API, vault privileges and execution bridge need confirmation for writes.', 'source': 'https://help.accruent.com/meridianenterprise/Content/Online_Help/Common/API_LandingPage.htm'},
@@ -49,7 +51,7 @@ class ValueRow(BaseModel):
 
 class ImportRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    target_kind: Literal['synthetic', 'live', 'preparation']
+    target_kind: Literal['synthetic', 'live', 'preparation', 'additional']
     target_id: str = Field(min_length=1, max_length=250)
     fields: list[FieldImport] = Field(min_length=1, max_length=100)
     value_rows: list[ValueRow] = Field(default_factory=list, max_length=100)
@@ -138,7 +140,7 @@ def validate_value(value, spec):
 
 def register_parameter_imports(app, db, identity, permit, project_check, audit, now):
     def target(c, who, project, kind, ident):
-        table = {'synthetic': 'connections', 'live': 'read_connections', 'preparation': 'connection_plans'}[kind]
+        table = {'synthetic': 'connections', 'live': 'read_connections', 'preparation': 'connection_plans', 'additional': 'external_connections'}[kind]
         row = c.execute(f'SELECT * FROM {table} WHERE tenant_id=? AND project_id=? AND id=?', (who['tenant_id'], project, ident)).fetchone()
         if not row:
             raise HTTPException(404, 'Destination connection unavailable in this project')
@@ -162,6 +164,14 @@ def register_parameter_imports(app, db, identity, permit, project_check, audit, 
         safe_target = {k: dest[k] for k in ['id', 'provider', 'name']}
         safe_target['kind'] = config['target_kind']
         safe_target['generation'] = dest.get('generation', dest.get('version', 0))
+        if config['target_kind'] == 'additional':
+            cfg = json.loads(dest['configuration'])
+            safe_target['scope_reference'] = cfg['scope_reference']
+            safe_target['company_id'] = cfg['company_id']
+            safe_target['project_id'] = cfg['project_id']
+            safe_target['configuration_digest'] = digest(cfg)
+            safe_target['manual_field_bindings'] = cfg['bindings']
+            safe_target['field_bindings_verified'] = False
         result = {'schema': source, 'target': safe_target, 'fields': [], 'documents': [], 'values': []}
         if config['target_kind'] == 'synthetic':
             params = (who['tenant_id'], project, dest['id'])
@@ -218,7 +228,19 @@ def register_parameter_imports(app, db, identity, permit, project_check, audit, 
                 values.append({'document_id': row['document_id'], 'property_uri': uri, 'target_name': field['target_name'], 'before': old, 'before_present': exists, 'after': new, 'action': action, 'error': error})
         blockers += [f['target_name'] + ': ' + error for f in fields for error in f['errors']]
         blockers += [v['target_name'] + ': ' + v['error'] for v in values if v['error']]
-        return {'synthetic': config['target_kind'] == 'synthetic', 'target': state['target'], 'schema_version': state['schema']['version'], 'dictionary': state['schema']['configuration']['dictionary'], 'class': state['schema']['configuration']['class'], 'fields': fields, 'values': values, 'blockers': blockers, 'overwrite_existing': config['overwrite_existing'], 'coverage': 'Exact selected parameters and documents only; no complete-project quality claim', 'remote_writes_available': False}
+        native_proposals = []
+        if state['target']['provider'] == 'procore' and config['target_kind'] == 'additional' and state['target'].get('company_id'):
+            for field in fields:
+                spec = field['definition'];prop = spec['property_definition']
+                native_type = {'String':'string', 'Boolean':'boolean', 'Real':'decimal'}.get(spec['data_type'])
+                reason = ''
+                if not native_type or spec['value_kind'] != 'Single' or prop.get('allowedValues') or spec['unit']:
+                    reason = 'No automatic equivalent for integer-only, list, enumerated or unit-qualified fields; explicit provider mapping is required.'
+                native_proposals.append({'property_uri': field['property_uri'], 'executable': False, 'existing_field_check_required': True, 'method': 'POST' if not reason else None,
+                    'path': '/rest/v2.0/companies/' + state['target']['company_id'] + '/custom_field_definitions' if not reason else None,
+                    'body': {'custom_field_definition': {'label': field['target_name'], 'data_type': native_type, 'description': 'bSDD reference: ' + prop['propertyUri'], 'active': True}} if not reason else None,
+                    'review_note': reason or 'Documented company-level definition proposal only. Verify duplicates, field-set applicability/required rules and permissions; the company definition does not impose project required-value rules or update document/asset values.'})
+        return {'native_definition_proposals': native_proposals, 'synthetic': config['target_kind'] == 'synthetic' , 'target': state['target'], 'schema_version': state['schema']['version'], 'dictionary': state['schema']['configuration']['dictionary'], 'class': state['schema']['configuration']['class'], 'fields': fields, 'values': values, 'blockers': blockers, 'overwrite_existing': config['overwrite_existing'], 'coverage': 'Exact selected parameters and documents only; no complete-project quality claim', 'remote_writes_available': False}
 
     def job(c, who, project, ident):
         project_check(c, who, project)
@@ -245,7 +267,7 @@ def register_parameter_imports(app, db, identity, permit, project_check, audit, 
         with db() as c:
             project_check(c, who, project)
             targets = []
-            for kind, table in [('synthetic', 'connections'), ('live', 'read_connections'), ('preparation', 'connection_plans')]:
+            for kind, table in [('synthetic', 'connections'), ('live', 'read_connections'), ('preparation', 'connection_plans'), ('additional', 'external_connections')]:
                 for row in c.execute(f'SELECT id,name,provider FROM {table} WHERE tenant_id=? AND project_id=?', (who['tenant_id'], project)):
                     targets.append({**dict(row), 'kind': kind, 'can_execute': kind == 'synthetic'})
             jobs = [public(dict(r)) for r in c.execute('SELECT * FROM parameter_imports WHERE tenant_id=? AND project_id=? ORDER BY created DESC,id', (who['tenant_id'], project))]

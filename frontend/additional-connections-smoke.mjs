@@ -1,0 +1,45 @@
+// Isolated server uses hand-authored JSON transport fixtures, real app DB/auth/cache.
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const procoreName='Procore browser fixture '+Date.now(),maintenanceName='Maintenance browser fixture '+Date.now();
+const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+try{
+ await page.goto(process.env.ORBIT_TEST_URL||'http://127.0.0.1:8002');
+ await page.getByLabel('Choose a synthetic identity').selectOption('north-owner');await page.getByRole('button',{name:'Enter workspace'}).click();
+ await page.getByRole('button',{name:'Additional connections',exact:true}).click();
+ await page.getByLabel('Additional connection name',{exact:true}).fill(procoreName);
+ await page.getByLabel('Additional evidence',{exact:true}).fill('Synthetic contract — no real vendor request');
+ await page.getByLabel('Vendor API URL, authentication and contract confirmed',{exact:true}).check();
+ await page.getByLabel('This identity and resource scope are authorised for testing',{exact:true}).check();
+ await page.getByRole('button',{name:'Save additional connection',exact:true}).click();
+ await page.getByText('Setup saved. Credentials and discovery are cleared on revisions. No network request was made.',{exact:true}).waitFor();
+ let card=page.locator('.read-connection').filter({has:page.getByRole('heading',{name:procoreName,exact:true})});
+ await card.getByRole('button',{name:'Set encrypted credential',exact:true}).click();await page.getByLabel('Additional test credential',{exact:true}).fill('synthetic-extra-browser-token');
+ await page.getByRole('button',{name:'Store additional credential',exact:true}).click();await page.getByText('Credential encrypted. Authentication has not yet been tested.',{exact:true}).waitFor();
+ await card.getByRole('button',{name:'Read companies',exact:true}).click();
+ const company=card.locator('select').filter({has:page.getByRole('option',{name:'Fixture Company',exact:true})});await company.selectOption('123');
+ await card.getByRole('button',{name:'Read projects',exact:true}).click();
+ const project=card.locator('select').filter({has:page.getByRole('option',{name:'Fixture Project',exact:true})});await project.selectOption('456');
+ await card.getByRole('button',{name:'Read field definitions',exact:true}).click();await page.getByText('string',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Parameter imports',exact:true}).click();
+ const destination=page.getByLabel('Parameter destination',{exact:true});await destination.selectOption({label:procoreName+' · procore · live writes unavailable'});
+ await page.getByRole('button',{name:'Preview parameter import',exact:true}).click();await page.getByText('Parameter import preview saved. No fields or values have been changed.',{exact:true}).waitFor();
+ const job=page.locator('.parameter-job').first();assert.match(await job.innerText(),/REMOTE EXECUTION BLOCKED/);assert.match(await job.innerText(),/Non-executable Procore definition proposal/);assert.match(await job.innerText(),/Company 123 · project 456/);
+ await page.getByRole('button',{name:'Additional connections',exact:true}).click();await page.getByLabel('Additional provider',{exact:true}).selectOption('maintenance_connection');
+ await page.getByLabel('Additional connection name',{exact:true}).fill(maintenanceName);await page.getByLabel('Additional API URL',{exact:true}).fill('https://custom.example/api');
+ await page.getByLabel('Additional API key header',{exact:true}).fill('X-Api-Key');await page.getByLabel('Additional evidence',{exact:true}).fill('Administrator contract fixture');
+ await page.getByLabel('REST collection path',{exact:true}).fill('/documents');await page.getByLabel('REST collection pointer',{exact:true}).fill('/rows');await page.getByLabel('REST ID pointer',{exact:true}).fill('/key');
+ await page.getByLabel('Vendor API URL, authentication and contract confirmed',{exact:true}).check();await page.getByLabel('This identity and resource scope are authorised for testing',{exact:true}).check();
+ await page.getByRole('button',{name:'Add destination field binding',exact:true}).click();await page.getByLabel('Binding property 0',{exact:true}).selectOption({label:'Rating'});
+ await page.getByLabel('Binding external_field_id 0',{exact:true}).fill('native-rating');await page.getByLabel('Binding external_field_name 0',{exact:true}).fill('Rating');await page.getByLabel('Binding evidence 0',{exact:true}).fill('Manual fixture binding, not verified inventory');
+ await page.getByRole('button',{name:'Save additional connection',exact:true}).click();await page.getByText('Setup saved. Credentials and discovery are cleared on revisions. No network request was made.',{exact:true}).waitFor();
+ card=page.locator('.read-connection').filter({has:page.getByRole('heading',{name:maintenanceName,exact:true})});await card.getByRole('button',{name:'Set encrypted credential',exact:true}).click();await page.getByLabel('Additional test credential',{exact:true}).fill('synthetic-maintenance-key');await page.getByRole('button',{name:'Store additional credential',exact:true}).click();
+ await page.getByText('Credential encrypted. Authentication has not yet been tested.',{exact:true}).waitFor();await card.getByRole('button',{name:'Read resources',exact:true}).click();await page.getByRole('cell',{name:'Synthetic maintenance resource',exact:true}).waitFor();
+ await card.getByRole('button',{name:'Edit additional setup',exact:true}).click();await page.getByRole('button',{name:'Save connection revision',exact:true}).click();await page.getByText('Setup saved. Credentials and discovery are cleared on revisions. No network request was made.',{exact:true}).waitFor();
+ assert.match(await card.innerText(),/no stored credential/);
+ await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
+ await page.screenshot({path:'/workspace/Orbit/.local/screenshots/additional-connections-mobile.png',fullPage:true});
+ await page.getByLabel('Test identity',{exact:true}).selectOption('north-viewer');await page.getByText('viewer · north-viewer',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Additional connections',exact:true}).count(),0);
+ assert.deepEqual(errors,[]);console.log('Additional connection browser passed: encrypted credentials, Procore named company/project selection and field inventory, blocked native proposals, configured Maintenance REST, field bindings, revision invalidation and viewer/mobile boundaries. Provider JSON fixtures only.');
+}finally{await browser.close();}
