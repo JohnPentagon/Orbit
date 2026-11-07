@@ -81,3 +81,7 @@ The wider acceptance list is [docs/TESTER_CHECKLIST.md](docs/TESTER_CHECKLIST.md
 ## Optional bSDD dictionary
 
 Version 0.6 adds **bSDD dictionaries** to the sidebar. As the project owner, browse public dictionaries or verify a versioned dictionary URL, optionally select class properties, enable the reference and save. No bSDD API key is needed. An enabled selection supplies field-name suggestions under Integration profiles. Existing mappings keep working with the reference disabled. Follow [docs/BSDD_SETUP.md](docs/BSDD_SETUP.md) for examples and limits.
+
+## Parameter definitions and optional values
+
+Version 0.7 adds **Parameter imports**. With a project bSDD reference enabled, prepare an import to a selected synthetic destination, optionally set typed values on exact documents, switch to the approver to review it, then return to the owner to apply the local test import. Inspect the receipt and local parameter quality report. Real read/preparation connections are listed but remain blocked from execution. Their download is a review record only. See [docs/PARAMETER_IMPORTS.md](docs/PARAMETER_IMPORTS.md). Your existing data is preserved by the new migration; keep the database/vault-key backup before updating.

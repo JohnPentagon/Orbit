@@ -25,6 +25,8 @@ Select a synthetic Northstar engineer to run the Forma/ACC Docs ↔ RedEye compa
 
 ## What works
 
+Version 0.7 adds **Parameter imports**: immutable bSDD-backed definition/value previews, explicit overwrite policy, typed/allowed-value/unit checks, separate review and local test execution with transactional read-back. Imported local parameter registers include a bounded required-value/type quality check. Real connections produce blocked review packages; **no live platform parameter writer is implemented**. See [parameter imports and platform prerequisites](docs/PARAMETER_IMPORTS.md).
+
 Version 0.6 adds optional **bSDD dictionaries** per project: live public dictionary/version selection or verified identifier URL, class/property browsing, saved property definitions and destination-field suggestions in the mapping editor. See [bSDD setup and verified connectivity](docs/BSDD_SETUP.md). No API key is required for these public reads.
 
 Version 0.5 adds **Connection preparation**: saved, project-specific provider plans and manual tester checklists, JSON export, proposed cloud/on-premises execution routes, and a bounded offline Meridian Explorer contract preview. Owners edit; other project roles view. Meridian, Procore and Maintenance Connection remain preparation-only. See [tester checklist](docs/TESTER_CHECKLIST.md) and [Meridian/on-premises findings](docs/MERIDIAN_AND_ON_PREMISES.md).

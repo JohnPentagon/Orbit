@@ -33,3 +33,7 @@ PowerWeb is an Enterprise browser client. Start Meridian contract groundwork wit
 ## 6 November 2026 — optional public bSDD property references
 
 Use the versioned public REST API, not direct identifier fetching or demonstration OAuth client IDs. Pin dictionary/version and selected class-property snapshots per project. Keep enablement optional, requirements explicit and private authentication out of the anonymous adapter. Reference field suggestions assist mapping design; do not silently change approved profiles or claim executable type/unit/compliance validation. Cache successful public metadata briefly after observed rate limiting, and preserve existing project settings during failures.
+
+## 7 November 2026 — parameter provisioning and values
+
+Separate definition import from optional value updates. Bind a reviewed bSDD/property and destination snapshot to each immutable job, preserve existing values by default, and verify applied local state by read-back in one transaction. Keep required-value quality distinct from successful definition creation. Real destinations are review-only until their definition/value/revision/concurrency contracts are established; the RedEye current-versus-approved distinction prevents assuming a read proves the intended write target. Do not represent ORBIT review JSON as a native vendor import.

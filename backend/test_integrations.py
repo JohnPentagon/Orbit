@@ -192,4 +192,4 @@ def test_existing_database_upgrades_without_losing_records(tmp_path):
     create_app(path, demo=True)
     with sqlite3.connect(path) as db:
         assert db.execute("SELECT connection_id FROM documents WHERE id='legacy-doc'").fetchone()[0] == "legacy-forma"
-        assert db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 6
+        assert db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 7

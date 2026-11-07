@@ -14,3 +14,8 @@
 @media(max-width:800px){.commission-check{grid-template-columns:1fr}}
 
 .commission-summary{padding:0 22px 18px}
+
+.parameter-field{padding:18px 0;border-bottom:1px solid #29384a}
+.parameter-field>small{overflow-wrap:anywhere}
+.parameter-job{border-bottom:1px solid #29384a}
+.parameter-job>.manifest-actions{padding:0 22px 20px}

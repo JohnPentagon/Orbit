@@ -58,6 +58,18 @@ Current Meridian support: saved preparation records and a hand-authored Explorer
 - [ ] Owner tests dictionary URL input and class/property selection locally, then confirms mapping suggestions meet the project naming needs.
 - [ ] Review desired type/unit/allowed-value enforcement before implementing document validation or vendor field creation.
 
+## Parameter imports — version 0.7
+
+- [x] Automated and browser checks validate local definition/value imports, explicit overwrite, exact approval, read-back, persistence and quality findings against synthetic destinations.
+- [ ] Owner tries the Parameter imports workflow locally with chosen bSDD properties, including definitions-only and optional values.
+- [ ] Confirm project naming, supported types, required values and units before enabling a real destination.
+- [ ] RedEye: administrator confirms how metadata keys are created; verify current versus approved revision targeting, merge/replacement and write permissions in a sandbox.
+- [ ] ACC: verify custom-attribute definition creation and version-value APIs, folder inheritance, supported types and write-scoped app/user access.
+- [ ] Meridian: supply installed .NET/Connection API write contract, vault privileges and execution/identity route.
+- [ ] Implement and sandbox-test each real writer with preconditions, partial failures, read-back, idempotency and reconciliation before remote execution is enabled.
+
+Real destinations remain blocked. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+
 ## Other connectors and desktop versions
 
 - [ ] Procore: developer app/customer installation, sandbox, OAuth contract, company/project document permissions and read API contract.

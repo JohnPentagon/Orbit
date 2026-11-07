@@ -102,7 +102,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.6.0")
+    app = FastAPI(title="ORBIT foundation", version="0.7.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -304,6 +304,8 @@ def create_app(db_path=None, demo=None):
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections
     register_read_connections(app, db, identity, permit, project_check, audit, vault, now)
+    from backend.parameter_imports import register_parameter_imports
+    register_parameter_imports(app, db, identity, permit, project_check, audit, now)
     from backend.bsdd import register_bsdd
     register_bsdd(app, db, identity, permit, project_check, audit, now)
     from backend.connection_plans import register_connection_plans
