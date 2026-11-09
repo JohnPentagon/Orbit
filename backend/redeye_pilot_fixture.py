@@ -22,8 +22,9 @@ from backend.test_parameter_imports import SCHEMA
 def create_fixture_app():
     ident='11111111-2222-3333-4444-555555555555'
     os.environ['ORBIT_ENABLE_LIVE_READS']='1'
-    os.environ['ORBIT_ENABLE_REDEYE_WRITE_TESTS']='1'
-    os.environ['ORBIT_REDEYE_WRITE_TEST_TARGET']=ident+'|api.redeyedms.com|777'
+    os.environ['ORBIT_UAT_MODE']='1'
+    os.environ.pop('ORBIT_ENABLE_REDEYE_WRITE_TESTS',None)
+    os.environ.pop('ORBIT_REDEYE_WRITE_TEST_TARGET',None)
     path=Path(tempfile.mkdtemp(prefix='orbit-redeye-pilot-browser-'))/'portal.db'
     app=create_app(path,demo=True)
     source=copy.deepcopy(SCHEMA)

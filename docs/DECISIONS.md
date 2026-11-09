@@ -49,3 +49,7 @@ Include per-connection native field references and scope in parameter review sna
 Use successful RedEye/bSDD reads to prepare a concrete existing-key pilot, not claim metadata-key creation. Capture keys, artefact and visible history; require operator-confirmed disposable isolation/current-approved equivalence because the reviewed GET/POST revision semantics lack an established atomic precondition. Preserve all returned single-valued metadata and add only one validated value.
 
 Keep real execution behind a separate exact-target process opt-in and short digest approval, apart from the general import executor. Reserve the attempt durably before POST, never replay, and allow GET-only reconciliation after uncertainty. Separate observed HTTP acknowledgement from read-back state. Source type validation does not create native RedEye definitions or prove whole-project compliance.
+
+### 9 November 2026 — browser-based local UAT
+
+The user requested a single locally running portal instead of terminal testing prompts and launcher switching. Run-ORBIT.cmd now starts UAT reads with no test prompts. The browser authorises one approved RedEye preview for at most 10 minutes, bound to its current session, exact digest and destination generation/host/artefact. Explicit final write confirmation and durable one-attempt handling remain. Grants are in memory only and consumed before POST. General writes, key creation and production identity are unchanged in scope.

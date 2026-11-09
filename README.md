@@ -1,3 +1,5 @@
+**Local UAT (v0.10):** double-click `Run-ORBIT.cmd`, then connect and test in the browser. No terminal test prompts, launcher switching or copying connection IDs. The **RedEye import test** page enables only an exact approved test for 10 minutes, followed by explicit write confirmation. [UAT instructions](docs/REDEYE_IMPORT_TEST.md).
+
 # ORBIT
 
 Construction integration and intelligence foundation. Cloud-first product direction; this repository currently runs a **local synthetic development portal**, not a deployed cloud service.

@@ -1,6 +1,12 @@
+## Start the local UAT portal — version 0.10
+
+Double-click **Run-ORBIT.cmd**. It opens http://127.0.0.1:8000 and requires no terminal testing choices. Keep that one server window open. Set up credentials in **Read connections**, select bSDD definitions in the portal, and use **RedEye import test** for inspect → preview → separate approval → enable this approved test → confirm/write → read-back. Connection identifiers and hostnames are taken from the saved profile automatically. See [the UAT guide](docs/REDEYE_IMPORT_TEST.md).
+
+Stop an older server once before updating; preserve `.local/orbit.db` and `.local/vault.key` together. The portal remains a trusted local test application with synthetic identities. A real RedEye write requires explicitly enabling an exact approved test in the browser; simply opening the portal never writes. The older launchers below are advanced alternatives, not steps required for UAT.
+
 # Run ORBIT on your Windows computer
 
-This is a local development/test portal. Dashboard and handover examples are synthetic and need no hosting account, Docker or vendor credentials. Explicit metadata reads and the separate v0.9 RedEye write pilot require authorised vendor access and their dedicated launchers.
+This is a local development/test portal. Dashboard and handover examples are synthetic and need no hosting account, Docker or vendor credentials. Metadata reads and the dedicated RedEye value pilot require authorised vendor access; use the single UAT launcher described above.
 
 ## First run
 
@@ -25,7 +31,7 @@ No real account registration occurs. Do not enter production credentials in the 
 
 For the new multi-field editor and synthetic handover flow, follow **docs/INTEGRATION_PROFILES.md**. Start with Northstar engineer → Integration profiles, then use an approver identity for the separate review steps. C-005 is the simplest eligible document for a synthetic manifest. No files are actually transferred.
 
-Version 0.4 provides **Read connections** with Autodesk consent/app-only authorisation, explicit token renewal and named hub/project/folder selectors. Use **Run-ORBIT-Read-Tests.cmd** only for approved local read testing; it prompts for an explicit opt-in and an optional confirmed RedEye production hostname. The default **Run-ORBIT.cmd** still supports fixture checks without vendor credentials. Follow **docs/AUTODESK_AND_REDEYE_SETUP.md** for app registration and exact callback configuration. No live sign-in was verified during development, and file transfers remain disabled.
+Version 0.4 provides **Read connections** with Autodesk consent/app-only authorisation, explicit token renewal and named hub/project/folder selectors. Use **Run-ORBIT.cmd** for browser-based approved local testing and fixture checks. The older **Run-ORBIT-Read-Tests.cmd** remains an advanced alternative for optional custom-host configuration. Follow **docs/AUTODESK_AND_REDEYE_SETUP.md** for app registration and exact callback configuration. No live sign-in was verified during development, and file transfers remain disabled.
 
 ## Stop and start again
 
@@ -92,4 +98,4 @@ Version 0.8 adds **Additional connections** for Procore, Meridian Explorer and a
 
 ## bSDD → RedEye value import pilot
 
-Version 0.9 adds **RedEye import test**. Start with `Run-ORBIT-Read-Tests.cmd` to inspect one disposable artefact and map a selected bSDD property to an existing empty key. Prepare/review the exact body. To perform the separately approved test, stop the server and use **Run-ORBIT-RedEye-Import-Test.cmd** with the displayed connection UUID, API hostname and artefact ID. Enter no API keys in the launcher. The portal still requires exact typed execution confirmation. This pilot can make a real metadata write; it is not the synthetic import button. It never retries a POST or creates a key. Read [docs/REDEYE_IMPORT_TEST.md](docs/REDEYE_IMPORT_TEST.md) first and tick actual results in the checklist. The new Windows launchers require local validation.
+Version 0.10 updates **RedEye import test** to run entirely in the browser after launching Run-ORBIT.cmd. Inspect one disposable artefact, map a selected bSDD property to an existing blank/unassigned key, review and approve, enable the exact approved test, then type its write confirmation and execute. No terminal target entry or restart is required between steps. This can make a real metadata write, never creates keys and never retries a POST. See [the UAT guide](docs/REDEYE_IMPORT_TEST.md) and tick actual results in the checklist. Windows launcher execution remains pending.

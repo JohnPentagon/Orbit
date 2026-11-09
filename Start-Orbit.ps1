@@ -21,7 +21,9 @@ try {
     } finally { $portCheck.Dispose() }
 
     $env:ORBIT_DEMO_MODE = '1'
-    if ($env:ORBIT_ENABLE_REDEYE_WRITE_TESTS -eq '1') {
+    if ($env:ORBIT_UAT_MODE -eq '1') {
+        Write-Host 'Starting ORBIT local UAT. Connect and run tests in the browser; no terminal test prompts. Keep this server window open; Ctrl+C stops it.' -ForegroundColor Cyan
+    } elseif ($env:ORBIT_ENABLE_REDEYE_WRITE_TESTS -eq '1') {
         Write-Host 'Starting ORBIT local test portal with the REAL one-target RedEye write pilot opted in. Keep this window open; Ctrl+C stops it.' -ForegroundColor Yellow
     } else {
         Write-Host 'Starting ORBIT local demo/read portal. RedEye test writes are disabled. Keep this window open; press Ctrl+C to stop.' -ForegroundColor Cyan

@@ -15,9 +15,11 @@ $artefactId = [long]0
 if (-not [long]::TryParse($artefactText, [ref]$artefactId) -or $artefactId -le 0 -or $artefactId -gt 9007199254740991) { throw 'Enter a positive artefact ID within the supported range.' }
 $oldReads = $env:ORBIT_ENABLE_LIVE_READS
 $oldHosts = $env:ORBIT_REDEYE_ALLOWED_HOSTS
+$oldUat = $env:ORBIT_UAT_MODE
 $oldWrites = $env:ORBIT_ENABLE_REDEYE_WRITE_TESTS
 $oldTarget = $env:ORBIT_REDEYE_WRITE_TEST_TARGET
 try {
+    $env:ORBIT_UAT_MODE = $null
     $env:ORBIT_ENABLE_LIVE_READS = '1'
     $env:ORBIT_ENABLE_REDEYE_WRITE_TESTS = '1'
     $env:ORBIT_REDEYE_WRITE_TEST_TARGET = $connectionGuid.ToString('D') + '|' + $vendorHost + '|' + $artefactId.ToString()
@@ -25,6 +27,7 @@ try {
     Write-Host 'Only this exact connection/host/artefact is write-enabled. The portal still requires a fresh preview, separate approval and typed execution confirmation.'
     & "$PSScriptRoot\Start-Orbit.ps1"
 } finally {
+    $env:ORBIT_UAT_MODE = $oldUat
     $env:ORBIT_ENABLE_LIVE_READS = $oldReads
     $env:ORBIT_REDEYE_ALLOWED_HOSTS = $oldHosts
     $env:ORBIT_ENABLE_REDEYE_WRITE_TESTS = $oldWrites

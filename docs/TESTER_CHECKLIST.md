@@ -84,16 +84,17 @@ General Parameter imports behaviour: Apply local parameter import writes only to
 
 General import destinations remain blocked; the separate v0.9 RedEye page provides the restricted pilot described below. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
 
-## bSDD → RedEye isolated value pilot — version 0.9
+## bSDD → RedEye isolated value pilot — version 0.10
 
-- [x] Fixture tests validate exact target/write opt-in, metadata preservation, source constraints, fresh snapshots, separate approval and one durable POST attempt.
+- [ ] Verify browser enable/disable, 10-minute expiry, identity-change and server-restart invalidation on the Windows UAT portal.
+- [x] Fixture tests validate session-bound exact-preview UAT permissions and legacy exact target/write opt-in, metadata preservation, source constraints, fresh snapshots, separate approval and one durable POST attempt.
 - [x] Fixture tests validate timeout-after-write, failed read-back, no replay after interruption, credential hygiene and GET-only rechecks.
 - [x] Isolated browser test passes inspection, preview, approval, simulated write/read-back, replay protection, reload and viewer/mobile access; no customer write.
-- [ ] Update/restart the local portal and confirm normal demo/read launchers do not enable pilot writes; test the new write launcher on Windows and verify process environment restoration.
+- [ ] Update/restart once using Run-ORBIT.cmd on Windows; confirm browser connection reads work without terminal prompts and opening the portal sends no write.
 - [ ] Prepare an existing empty test metadata key and a disposable isolated artefact; confirm matching current/approved revision in the native UI and modifiable state. Do not infer approval from the API label alone.
 - [ ] Inspect keys/detail/history using the existing encrypted connection. Record the observed response shape and any blockers without posting keys or customer values in chat.
 - [ ] Select one valid bSDD property/value; verify exact native key meaning, units and source constraints; inspect the complete preservation payload and record non-secret evidence.
-- [ ] Approve the exact preview, restart with the exact connection/host/artefact allowlisted and perform the single confirmed test write.
+- [ ] Approve the exact preview, enable that approved test in the browser, type its confirmation and perform the single test write without restarting or entering identifiers in a terminal.
 - [ ] Verify target value, every prior metadata value, revision/approval, title/number and other content in the API and native RedEye UI. Record HTTP acknowledgement separately from read-back state.
 - [ ] If uncertain, stop writes and inspect/recheck with GET only. Confirm duplicate execution/new preview/restart does not send another POST to that target.
 - [ ] Clean up the disposable target manually after preserving test evidence; do not delete attempt records or use automatic rollback/retry.

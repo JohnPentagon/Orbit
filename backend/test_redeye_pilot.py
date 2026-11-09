@@ -173,7 +173,7 @@ def test_fixed_vendor_transport_headers_no_redirect_retry_or_secret_echo():
     cfg={'auth_header':'Authorization','auth_prefix':'Bearer'};seen=[]
     def handler(request):
         seen.append(request);assert request.url.host=='api.redeyedms.com' and request.headers['authorization']=='Bearer synthetic-key'
-        assert request.headers['user-agent']=='ORBIT/0.9.0'
+        assert request.headers['user-agent']=='ORBIT/0.10.0'
         if request.method=='POST':assert json.loads(request.content)=={'metadata':[]};return httpx.Response(200)
         return httpx.Response(200,json={'value':'public'})
     t=httpx.MockTransport(handler)
@@ -247,3 +247,64 @@ def test_blank_target_is_filled_once_without_duplicate_payload_entries(portal,mo
     assert sum(m['name']=='Pilot Rating' for m in test['preview']['payload']['metadata'])==1
     approve(c,test);enable(monkeypatch,ident)
     assert execute(c,test).json()['read_back_verified'] and state['posts']==1
+
+
+def arm(c,test):
+    return c.post(ROOT+'/'+test['id']+'/arm',json={'digest':test['digest']})
+
+
+def test_uat_browser_enable_disable_and_execute_without_terminal_target(portal,monkeypatch):
+    c,_,ident,state=portal;monkeypatch.setenv('ORBIT_UAT_MODE','1')
+    test=preview(c,inspect(c,ident));approve(c,test)
+    assert execute(c,test).status_code==409
+    assert arm(c,test).json()['written'] is False
+    ctx=c.get(ROOT).json();assert ctx['uat_mode'] and ctx['armed_test_ids']==[test['id']] and not ctx['write_opt_in']
+    assert state['posts']==0
+    assert c.post(ROOT+'/'+test['id']+'/disarm',json={'digest':test['digest']}).json()['written'] is False
+    assert execute(c,test).status_code==409
+    assert arm(c,test).status_code==200
+    assert execute(c,test).json()['status']=='verified' and state['posts']==1
+    assert c.get(ROOT).json()['armed_test_ids']==[]
+    assert arm(c,test).status_code==409
+
+
+@pytest.mark.parametrize('change',['no_uat','unapproved','viewer','wrong_digest'])
+def test_uat_enable_requires_exact_approval_scope_and_mode(portal,monkeypatch,change):
+    c,_,ident,state=portal;monkeypatch.setenv('ORBIT_UAT_MODE','1')
+    test=preview(c,inspect(c,ident))
+    if change!='unapproved':approve(c,test)
+    if change=='no_uat':monkeypatch.delenv('ORBIT_UAT_MODE')
+    if change=='viewer':c.post('/api/demo/session',json={'user_id':'north-viewer'})
+    if change=='wrong_digest':test['digest']='0'*64
+    assert arm(c,test).status_code in {403,409} and state['posts']==0
+
+
+@pytest.mark.parametrize('change',['session','expiry','restart','generation','dictionary','cross_origin'])
+def test_uat_enable_does_not_bypass_existing_controls(portal,monkeypatch,change):
+    c,path,ident,state=portal;monkeypatch.setenv('ORBIT_UAT_MODE','1')
+    test=preview(c,inspect(c,ident));approve(c,test);assert arm(c,test).status_code==200
+    if change=='session':c.post('/api/demo/session',json={'user_id':'north-owner'})
+    if change=='expiry':
+        original=pilot.time.time;at=original()+601
+        monkeypatch.setattr(pilot.time,'time',lambda:at)
+    if change=='restart':
+        newer=TestClient(create_app(path,demo=True));newer.cookies.update(c.cookies);c=newer
+    if change=='generation':
+        with sqlite3.connect(path) as db:db.execute('UPDATE read_connections SET generation=generation+1 WHERE id=?',(ident,))
+    if change=='dictionary':
+        with sqlite3.connect(path) as db:db.execute('UPDATE bsdd_settings SET version=version+1')
+    if change=='cross_origin':
+        r=c.post(ROOT+'/'+test['id']+'/execute',json={'digest':test['digest'],'confirmation':'WRITE 777'},headers={'Origin':'https://other.example'})
+        assert r.status_code==403 and state['posts']==0;return
+    assert execute(c,test).status_code==409 and state['posts']==0
+
+
+def test_uat_permission_is_only_for_one_exact_preview(portal,monkeypatch):
+    c,_,ident,state=portal;monkeypatch.setenv('ORBIT_UAT_MODE','1')
+    inspection=inspect(c,ident);first=preview(c,inspection);second=preview(c,inspection)
+    approve(c,first);approve(c,second)
+    assert arm(c,first).status_code==200
+    assert execute(c,second).status_code==409 and state['posts']==0
+    assert arm(c,second).status_code==200
+    assert execute(c,first).status_code==409 and state['posts']==0
+    assert execute(c,second).json()['status']=='verified' and state['posts']==1

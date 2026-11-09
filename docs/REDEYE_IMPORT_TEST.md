@@ -1,6 +1,6 @@
 # bSDD → RedEye isolated value import test
 
-Version 0.9, 9 November 2026. The owner reports successful RedEye and bSDD reads. This is the next **single-value live pilot**, not a general dictionary/key import or document transfer. No customer write was performed by the agent.
+Version 0.10, 9 November 2026. The owner reports successful RedEye and bSDD reads. This is the next **single-value live pilot**, not a general dictionary/key import or document transfer. No customer write was performed by the agent.
 
 ## What to prepare
 
@@ -13,7 +13,7 @@ The first pilot rejects nonempty target values, multi-valued metadata, unknown k
 
 ## 1. Prepare with reads only
 
-1. Stop the previous ORBIT process. Update to v0.9 while preserving the local database/vault-key pair securely, then start **Run-ORBIT-Read-Tests.cmd** and type ENABLE.
+1. Stop the previous ORBIT process. Update to v0.10 while preserving the local database/vault-key pair securely, then double-click **Run-ORBIT.cmd**. This opens the local UAT portal with connection reads available. No terminal test prompts or switching launchers are required. Keep its server window open while using the browser.
 2. Open **http://127.0.0.1:8000**, choose your local owner role, then open **RedEye import test**.
 3. Choose the saved RedEye connection. Load the bounded candidate list or enter the known disposable artefact ID; click **Inspect RedEye target**. This reads keys, artefact detail and version history. It does not POST to RedEye.
 4. Review the exact number/title, ID, state, revision ID/status and returned metadata. The API says GET is latest approved, while POST updates current revision. Confirm in the native RedEye UI/admin documentation that these are the same target. The portal does not infer approval from an arbitrary status label.
@@ -23,24 +23,20 @@ The first pilot rejects nonempty target values, multi-valued metadata, unknown k
 
 Inspections and previews expire after 15 minutes. The preview pins the full bSDD project reference, connection generation, existing keys/values, artefact identity/state and visible revisions. If any changes, inspect/review again. The source property identity and proposed native key ID/name are stored with the test.
 
-## 2. Enable exactly one target
+## 2. Enable and run the approved test in the browser
 
-Stop the read-test server. Run **Run-ORBIT-RedEye-Import-Test.cmd**.
+Stay in the same running portal. After separate approval, return to the owner role and find the approved test in **RedEye import test**.
 
-Enter:
+1. Review the connection name, artefact, property, metadata key and payload.
+2. Click **Enable this approved UAT test**. This only enables that exact approved preview in your current browser session for up to 10 minutes (or the preview expiry, if sooner). It does not send a vendor write or enable other connections/artefacts/previews.
+3. Type **WRITE followed by the artefact ID** shown on the page, for example `WRITE 12345`.
+4. Click **Write this one RedEye test value**.
 
-- `WRITE TEST` at the explicit opt-in prompt.
-- The saved RedEye read **connection UUID** shown on the test page.
-- Its exact API **hostname only**, such as `api.redeyedms.com`, without HTTPS or a path.
-- The exact disposable artefact ID.
+The saved connection provides its hostname and encrypted API key automatically. **No API key, connection UUID or hostname is entered in a terminal.** You can click **Disable this UAT test** before executing. Session sign-out/identity changes, expiry and server restart invalidate the browser permission; re-enable after returning to the owner role if necessary. Keep the normal single-server launch running throughout approval and execution.
 
-**Never enter the API key in the launcher.** It reuses the encrypted credential already stored in the portal. The launcher sets only process-local read/write opt-in and the exact connection/host/artefact allowlist, then restores prior environment settings on exit. It does not publish an environment, change firewall rules or grant vendor permissions.
+The server still checks the exact target, current approval/role/grants, expiry, unchanged dictionary/credential/connection and a fresh RedEye snapshot. It reserves the attempt durably before sending a single POST to `/api/v1/artefacts/{Id}` with only the reviewed `metadata` body. It then reads back keys/detail/history and compares the target plus **all returned pre-existing values** and stable identity/revision/content guards. The browser permission is consumed before POST. Unknown results never automatically retry.
 
-In the portal, return to the owner role and the approved test. Type **WRITE followed by that artefact ID** (for example `WRITE 12345`) in the execution confirmation, then click **Write this one RedEye test value**.
-
-The launcher does not write automatically. The server checks the exact target, current approval/role/grants, expiry, unchanged dictionary/credential/connection and a fresh RedEye snapshot. It reserves the attempt durably before sending a single POST to `/api/v1/artefacts/{Id}` with only the reviewed `metadata` body. It then reads back keys/detail/history and compares the target plus **all returned pre-existing values** and stable identity/revision/content guards.
-
-The normal `Run-ORBIT.cmd` clears inherited pilot flags for its process. The normal read-test launcher also explicitly clears/restores pilot flags. Neither enables this write path. Stop any old server before switching launchers; ORBIT refuses to start another listener on port 8000.
+The previous read-test and exact-target write-test launchers remain advanced alternatives; neither enables browser UAT grants. They are no longer required for this flow. Stop the old server once when updating to v0.10; do not run multiple launchers together. ORBIT refuses another listener on port 8000 and never stops an unrelated process.
 
 ## 3. Check the outcome
 

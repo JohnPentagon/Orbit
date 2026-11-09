@@ -22,7 +22,11 @@ try{
  await role('north-approver');job=page.locator('.parameter-job').first();await job.getByRole('button',{name:'Approve RedEye test',exact:true}).click();await page.getByText('Test approved; no write sent.',{exact:true}).waitFor();
  await role('north-owner');job=page.locator('.parameter-job').first();
  const button=job.getByRole('button',{name:'Write this one RedEye test value',exact:true});assert.equal(await button.isDisabled(),true);
- await job.getByRole('textbox').fill('WRITE 777');await button.click();
+ await job.getByRole('textbox').fill('WRITE 777');assert.equal(await button.isDisabled(),true);
+ await job.getByRole('button',{name:'Enable this approved UAT test',exact:true}).click();
+ await page.getByText('This approved test is enabled for up to 10 minutes in this browser session. No write sent.',{exact:true}).waitFor();
+ await job.getByRole('button',{name:'Disable this UAT test',exact:true}).click();assert.equal(await button.isDisabled(),true);
+ await job.getByRole('button',{name:'Enable this approved UAT test',exact:true}).click();await button.click();
  await page.getByText('RedEye test value and preserved metadata verified by read-back.',{exact:true}).waitFor();assert.match(await job.innerText(),/POST HTTP 200 was observed/);
  const context=await (await page.request.get(base+'/api/projects/harbour/redeye-import-tests')).json();const test=context.tests[0];
  const repeat=await page.request.post(base+'/api/projects/harbour/redeye-import-tests/'+test.id+'/execute',{data:{digest:test.digest,confirmation:'WRITE 777'}});assert.equal((await repeat.json()).status,'verified');

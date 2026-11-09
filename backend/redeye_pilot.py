@@ -5,6 +5,8 @@ The vendor contract has no established atomic revision precondition: this pilot
 requires a disposable, isolated, single-current-approved-revision target.
 """
 import json
+import hashlib
+import threading
 import os
 import secrets
 import time
@@ -28,7 +30,7 @@ def positive(value):
 
 def request_vendor(base, secret, cfg, method, path, payload=None, transport=None):
     headers = auth_headers('redeye', secret, cfg['auth_header'], cfg['auth_prefix'])
-    headers['User-Agent'] = 'ORBIT/0.9.0'
+    headers['User-Agent'] = 'ORBIT/0.10.0'
     try:
         with httpx.Client(transport=transport, timeout=httpx.Timeout(20, connect=5), follow_redirects=False, trust_env=True) as client:
             with client.stream(method, base + path, headers=headers, json=payload) as response:
@@ -136,6 +138,26 @@ class Execute(Exact):
 
 
 def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
+    # Local UAT permissions are short-lived, session-bound and never survive restart.
+    armed = {}
+    arm_lock = threading.Lock()
+
+    def session_key(request):
+        return hashlib.sha256(request.cookies.get('orbit_session','').encode()).hexdigest()
+
+    def uat_mode():
+        return os.getenv('ORBIT_UAT_MODE') == '1'
+
+    def arm_matches(request, row, test):
+        with arm_lock:
+            for key, grant in list(armed.items()):
+                if grant['expires'] <= int(time.time()):
+                    del armed[key]
+            grant = armed.get(session_key(request))
+            return bool(grant and grant['test_id'] == test['id'] and grant['digest'] == test['digest']
+                        and grant['connection_id'] == row['id'] and grant['generation'] == row['generation']
+                        and grant['target'] == row['id']+'|'+url_host(json.loads(row['configuration'])['base_url'])+'|'+str(test['artefact_id']))
+
     def connection(c,who,project,ident):
         project_check(c,who,project)
         row=c.execute('SELECT * FROM read_connections WHERE tenant_id=? AND project_id=? AND id=? AND provider=?',(who['tenant_id'],project,ident,'redeye')).fetchone()
@@ -150,7 +172,7 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
 
     def access(row):
         cfg=json.loads(row['configuration'])
-        if os.getenv('ORBIT_ENABLE_LIVE_READS')!='1':raise HTTPException(409,'Enable live reads with the local read-test or RedEye import-test launcher.')
+        if os.getenv('ORBIT_ENABLE_LIVE_READS')!='1':raise HTTPException(409,'Open the local portal using Run-ORBIT.cmd to enable UAT connection reads.')
         if not cfg['vendor_settings_confirmed'] or not cfg['approved_test_access'] or not cfg['evidence_note'].strip():raise HTTPException(409,'Confirm vendor settings, test access and evidence on this saved read connection first.')
         try:
             base=approved_base('redeye',cfg['base_url'],[h.strip().lower() for h in os.getenv('ORBIT_REDEYE_ALLOWED_HOSTS','').split(',') if h.strip()])
@@ -160,11 +182,12 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
         except Exception:raise HTTPException(409,'Stored RedEye credential is missing or unreadable; replace it in Read connections.')
         return base,secret,cfg
 
-    def write_gate(row,artefact_id):
+    def write_gate(row,artefact_id,request=None,test=None):
+        if uat_mode() and request is not None and test is not None and arm_matches(request,row,test):return
         host=url_host(json.loads(row['configuration'])['base_url'])
         required=row['id']+'|'+host+'|'+str(artefact_id)
         if os.getenv('ORBIT_ENABLE_REDEYE_WRITE_TESTS')!='1' or os.getenv('ORBIT_REDEYE_WRITE_TEST_TARGET','')!=required:
-            raise HTTPException(409,'Restart using the separate RedEye import-test launcher and allow this exact connection, host and disposable artefact. Normal read opt-in never enables writes.')
+            raise HTTPException(409,'Enable this exact approved test in the UAT browser first. This does not enable any other target.')
 
     def current(request,who,project,ident,generation,action='connection'):
         current_who=identity(request)
@@ -219,7 +242,7 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
         return True,'One value and all returned pre-existing metadata values matched on read-back. Current/approved equivalence remains the operator-confirmed isolated-test condition.'
 
     @app.get('/api/projects/{project}/redeye-import-tests')
-    def listing(project:str,who=Depends(identity)):
+    def listing(project:str,request:Request,who=Depends(identity)):
         permit(who,'view')
         with db() as c:
             project_check(c,who,project)
@@ -232,7 +255,7 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
         import re
         allowed_target=os.getenv('ORBIT_REDEYE_WRITE_TEST_TARGET','')
         if not re.fullmatch(r'[0-9a-fA-F-]{36}\|[a-z0-9.-]+\|[1-9][0-9]*',allowed_target):allowed_target=''
-        return {'connections':connections,'tests':rows,'write_opt_in':os.getenv('ORBIT_ENABLE_REDEYE_WRITE_TESTS')=='1','target_allowlist':allowed_target if who['role']=='owner' else '', 'server_version':app.version}
+        return {'connections':connections,'tests':rows,'write_opt_in':os.getenv('ORBIT_ENABLE_REDEYE_WRITE_TESTS')=='1','target_allowlist':allowed_target if who['role']=='owner' else '', 'server_version':app.version,'uat_mode':uat_mode(),'armed_test_ids':[r['id'] for r in rows if who['role']=='owner' and uat_mode() and arm_matches(request,{'id':r['connection_id'],'generation':r['generation'],'configuration':canonical({'base_url':r['preview']['base_url']})},r)]}
 
     @app.get('/api/projects/{project}/redeye-import-tests/candidates/{ident}')
     def candidates(project:str,ident:str,request:Request,who=Depends(identity)):
@@ -314,6 +337,36 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
             c.execute("UPDATE redeye_import_tests SET status='approved',approved_by=? WHERE id=?",(who['user_id'],ident));audit(c,who,'redeye_test.approved',project,ident)
         return {'status':'approved','written':False}
 
+    @app.post('/api/projects/{project}/redeye-import-tests/{ident}/arm')
+    def arm(project:str,ident:str,request:Request,body:Exact,who=Depends(identity)):
+        permit(who,'connection')
+        if not uat_mode():raise HTTPException(409,'Open Run-ORBIT.cmd for browser-based local UAT testing.')
+        with db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            row=job(c,who,project,ident);check_exact(row,body)
+            if row['status']!='approved':raise HTTPException(409,'A separately approved preview is required before enabling a test.')
+            conn=fresh(c,who,project,row);approver(c,who,project,row)
+            access(conn)
+            if c.execute('SELECT 1 FROM redeye_import_attempts WHERE connection_id=? AND artefact_id=?',(conn['id'],row['artefact_id'])).fetchone():
+                raise HTTPException(409,'This target already has an attempt. Inspect its outcome; use a new disposable target for another test.')
+            expires=min(row['expires'],int(time.time())+600)
+            audit(c,who,'redeye_test.uat_enabled',project,ident)
+        with arm_lock:
+            armed[session_key(request)]={'test_id':row['id'],'digest':row['digest'],'connection_id':conn['id'],'generation':conn['generation'],
+                                         'target':conn['id']+'|'+url_host(json.loads(conn['configuration'])['base_url'])+'|'+str(row['artefact_id']),'expires':expires}
+        return {'status':'enabled','expires':expires,'written':False}
+
+    @app.post('/api/projects/{project}/redeye-import-tests/{ident}/disarm')
+    def disarm(project:str,ident:str,request:Request,body:Exact,who=Depends(identity)):
+        permit(who,'connection')
+        with db() as c:
+            row=job(c,who,project,ident);check_exact(row,body)
+            audit(c,who,'redeye_test.uat_disabled',project,ident)
+        with arm_lock:
+            grant=armed.get(session_key(request))
+            if grant and grant['test_id']==ident:armed.pop(session_key(request),None)
+        return {'status':'disabled','written':False}
+
     @app.post('/api/projects/{project}/redeye-import-tests/{ident}/execute')
     def execute(project:str,ident:str,request:Request,body:Execute,who=Depends(identity)):
         permit(who,'connection')
@@ -323,13 +376,13 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
             if row['status']!='approved':raise HTTPException(409,'A separately approved test preview is required.')
             conn=fresh(c,who,project,row);approver(c,who,project,row)
         if body.confirmation!='WRITE '+str(row['artefact_id']):raise HTTPException(409,'Type WRITE followed by the exact artefact ID to execute this one-value test.')
-        write_gate(conn,row['artefact_id']);base,secret,cfg=access(conn)
+        write_gate(conn,row['artefact_id'],request,row);base,secret,cfg=access(conn)
         try:latest=snapshot(base,secret,cfg,row['artefact_id'])
         except ProviderError as e:raise HTTPException(502,{'code':e.code,'message':e.message})
         current(request,who,project,conn['id'],conn['generation'])
         if digest(latest)!=digest(json.loads(row['before_snapshot'])):raise HTTPException(409,'Artefact, metadata keys, values or revision changed; inspect and preview again. No POST sent.')
         with db() as c:
-            c.execute('BEGIN IMMEDIATE');row=job(c,who,project,ident);conn=fresh(c,who,project,row);approver(c,who,project,row);write_gate(conn,row['artefact_id'])
+            c.execute('BEGIN IMMEDIATE');row=job(c,who,project,ident);conn=fresh(c,who,project,row);approver(c,who,project,row);write_gate(conn,row['artefact_id'],request,row)
             if row['status']!='approved':raise HTTPException(409,'Another request already claimed this test.')
             if c.execute('SELECT 1 FROM redeye_import_attempts WHERE connection_id=? AND artefact_id=?',(conn['id'],row['artefact_id'])).fetchone():raise HTTPException(409,'This connection/artefact already has a test attempt. Inspect its result and use a new disposable target; never retry blindly.')
             c.execute('INSERT INTO redeye_import_attempts VALUES(?,?,?,?)',(conn['id'],row['artefact_id'],ident,now()))
@@ -340,7 +393,8 @@ def register_redeye_pilot(app,db,identity,permit,project_check,audit,vault,now):
             http_ok=False
             try:
                 current(request,who,project,row['connection_id'],row['generation'])
-                conn=fresh(c,who,project,row);approver(c,who,project,row);write_gate(conn,row['artefact_id']);base,secret,cfg=access(conn)
+                conn=fresh(c,who,project,row);approver(c,who,project,row);write_gate(conn,row['artefact_id'],request,row);base,secret,cfg=access(conn)
+                with arm_lock:armed.pop(session_key(request),None)
                 request_vendor(base,secret,cfg,'POST',f"/api/v1/artefacts/{row['artefact_id']}",json.loads(row['preview'])['payload'])
                 http_ok=True
                 after=snapshot(base,secret,cfg,row['artefact_id']);verified,reason=verify(row,after)
