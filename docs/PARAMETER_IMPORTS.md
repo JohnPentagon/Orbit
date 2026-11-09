@@ -67,3 +67,7 @@ Tests cover persistence, source/destination scope, role/grant changes, self-appr
 ## Additional destinations in version 0.8
 
 Additional connection profiles now appear as their own destination kind. Reviews include their exact generation/configuration digest, company/project IDs, resource-scope reference and manual field bindings. Procore company field-definition inventory can be read; conservative non-executable definition proposals may be included in review packages. Neither a manual binding nor a documented candidate payload enables execution. See ADDITIONAL_CONNECTIONS.md for exact mapping limits and required field-set/value-write validation.
+
+## Dedicated RedEye pilot in version 0.9
+
+The separate **RedEye import test** page now supports an explicitly opted-in, one-artefact existing-key value test with real GET preflight, isolated-target/operator revision confirmation, one guarded POST and read-back/no-retry handling. It does not change this general import executor's remote blockers or permit key creation/batches. Use REDEYE_IMPORT_TEST.md for scope, manual native-UI checks and Windows launcher instructions.

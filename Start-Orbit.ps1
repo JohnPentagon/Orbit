@@ -21,7 +21,11 @@ try {
     } finally { $portCheck.Dispose() }
 
     $env:ORBIT_DEMO_MODE = '1'
-    Write-Host 'Starting ORBIT synthetic local demo. Keep this window open; press Ctrl+C to stop.' -ForegroundColor Cyan
+    if ($env:ORBIT_ENABLE_REDEYE_WRITE_TESTS -eq '1') {
+        Write-Host 'Starting ORBIT local test portal with the REAL one-target RedEye write pilot opted in. Keep this window open; Ctrl+C stops it.' -ForegroundColor Yellow
+    } else {
+        Write-Host 'Starting ORBIT local demo/read portal. RedEye test writes are disabled. Keep this window open; press Ctrl+C to stop.' -ForegroundColor Cyan
+    }
     $server = Start-Process -FilePath "$PSScriptRoot\.venv\Scripts\python.exe" -ArgumentList @('-m', 'uvicorn', 'backend.main:create_app', '--factory', '--host', '127.0.0.1', '--port', '8000') -WorkingDirectory $PSScriptRoot -NoNewWindow -PassThru
     $ready = $false
     for ($attempt = 0; $attempt -lt 40; $attempt++) {

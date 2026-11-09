@@ -1,6 +1,6 @@
 # Run ORBIT on your Windows computer
 
-This is the synthetic foundation, not a live Forma/RedEye integration. It runs on your computer and does not require a hosting account, Docker, vendor credentials or a paid service.
+This is a local development/test portal. Dashboard and handover examples are synthetic and need no hosting account, Docker or vendor credentials. Explicit metadata reads and the separate v0.9 RedEye write pilot require authorised vendor access and their dedicated launchers.
 
 ## First run
 
@@ -89,3 +89,7 @@ Version 0.7 adds **Parameter imports**. With a project bSDD reference enabled, p
 ## Additional platform connections
 
 Version 0.8 adds **Additional connections** for Procore, Meridian Explorer and administrator-configured Maintenance/custom REST. The read-test launcher now accepts optional exact HTTPS origins (host and optional port, no application path). Store credentials only through the encrypted portal form. Procore uses an existing access token, then named company/project selection; it does not yet provide Procore browser OAuth. For Windows-integrated Meridian Explorer, optional packages can be installed with `Setup-Orbit-WindowsAuth.ps1` after normal setup. That helper and real SSPI negotiation still need Windows testing. See [docs/ADDITIONAL_CONNECTIONS.md](docs/ADDITIONAL_CONNECTIONS.md) for prerequisites and limits. Real parameter writers remain disabled.
+
+## bSDD → RedEye value import pilot
+
+Version 0.9 adds **RedEye import test**. Start with `Run-ORBIT-Read-Tests.cmd` to inspect one disposable artefact and map a selected bSDD property to an existing empty key. Prepare/review the exact body. To perform the separately approved test, stop the server and use **Run-ORBIT-RedEye-Import-Test.cmd** with the displayed connection UUID, API hostname and artefact ID. Enter no API keys in the launcher. The portal still requires exact typed execution confirmation. This pilot can make a real metadata write; it is not the synthetic import button. It never retries a POST or creates a key. Read [docs/REDEYE_IMPORT_TEST.md](docs/REDEYE_IMPORT_TEST.md) first and tick actual results in the checklist. The new Windows launchers require local validation.

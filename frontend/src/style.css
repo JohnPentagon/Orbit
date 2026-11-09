@@ -19,3 +19,7 @@
 .parameter-field>small{overflow-wrap:anywhere}
 .parameter-job{border-bottom:1px solid #29384a}
 .parameter-job>.manifest-actions{padding:0 22px 20px}
+
+.pilot-payload{white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;background:#0b1421;border:1px solid #29384a;border-radius:6px;font-size:12px;max-height:360px;overflow:auto}
+
+@media(min-width:761px){aside nav{min-height:0;overflow-y:auto;flex-shrink:1}.sidebar-bottom{flex-shrink:0}}

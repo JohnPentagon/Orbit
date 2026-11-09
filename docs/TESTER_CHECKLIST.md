@@ -1,6 +1,6 @@
 # ORBIT tester checklist
 
-Updated 6 November 2026. Keep this list for later; no testing is needed immediately.
+Updated 9 November 2026. Keep this list for later; no testing is needed immediately.
 
 The portal's **Connection preparation** page saves a checklist per project and intended connection, with Passed / Failed / Blocked / Not applicable / Untested and a non-secret evidence note. Owners edit; other project roles view. Export checklist downloads a JSON copy through your browser. Records are stored in your local `.local/orbit.db`; back up the database and its matching vault key securely before replacing a local installation. Never commit or share that folder.
 
@@ -12,6 +12,7 @@ Completed entries below are user-reported, not independently reproduced. They do
 - [x] RedEye Read artefacts succeeded.
 - [x] RedEye Read groups succeeded.
 - [x] RedEye Read metadata keys succeeded.
+- [x] Owner reconfirmed successful RedEye and bSDD reads on 9 November 2026. This is user-reported access, not proof of write permission.
 
 Evidence: owner reported “connection confirmed” and “they all worked” in this conversation. Exact response samples, installed environment, result counts and permission scope were not captured by the agent. Do not paste keys into test evidence.
 
@@ -79,9 +80,25 @@ Current Meridian support: saved preparation records, an offline Explorer preview
 - [ ] Verify real writes are denied for insufficient permissions or a different connection/project, and that unrelated records/parameters remain unchanged.
 - [ ] Test failed/partial writes, interruption and retry without duplicate fields, repeated changes or a false success receipt.
 
-Current behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
+General Parameter imports behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
 
-Real destinations remain blocked. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+General import destinations remain blocked; the separate v0.9 RedEye page provides the restricted pilot described below. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+
+## bSDD → RedEye isolated value pilot — version 0.9
+
+- [x] Fixture tests validate exact target/write opt-in, metadata preservation, source constraints, fresh snapshots, separate approval and one durable POST attempt.
+- [x] Fixture tests validate timeout-after-write, failed read-back, no replay after interruption, credential hygiene and GET-only rechecks.
+- [x] Isolated browser test passes inspection, preview, approval, simulated write/read-back, replay protection, reload and viewer/mobile access; no customer write.
+- [ ] Update/restart the local portal and confirm normal demo/read launchers do not enable pilot writes; test the new write launcher on Windows and verify process environment restoration.
+- [ ] Prepare an existing empty test metadata key and a disposable isolated artefact; confirm matching current/approved revision in the native UI and modifiable state. Do not infer approval from the API label alone.
+- [ ] Inspect keys/detail/history using the existing encrypted connection. Record the observed response shape and any blockers without posting keys or customer values in chat.
+- [ ] Select one valid bSDD property/value; verify exact native key meaning, units and source constraints; inspect the complete preservation payload and record non-secret evidence.
+- [ ] Approve the exact preview, restart with the exact connection/host/artefact allowlisted and perform the single confirmed test write.
+- [ ] Verify target value, every prior metadata value, revision/approval, title/number and other content in the API and native RedEye UI. Record HTTP acknowledgement separately from read-back state.
+- [ ] If uncertain, stop writes and inspect/recheck with GET only. Confirm duplicate execution/new preview/restart does not send another POST to that target.
+- [ ] Clean up the disposable target manually after preserving test evidence; do not delete attempt records or use automatic rollback/retry.
+
+**No customer write test is marked complete by the agent.** This is an existing-key value pilot only. Key creation, overwrite, multi-valued metadata, general/batch writes, file handovers and production identity remain separate gates. See REDEYE_IMPORT_TEST.md.
 
 ## Additional connections — version 0.8
 

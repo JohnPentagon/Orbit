@@ -18,10 +18,14 @@ if ($extraInput) {
         $extraOrigins += $parsed.GetLeftPart([UriPartial]::Authority).ToLowerInvariant()
     }
 }
+$oldWrites = $env:ORBIT_ENABLE_REDEYE_WRITE_TESTS
+$oldWriteTarget = $env:ORBIT_REDEYE_WRITE_TEST_TARGET
 $oldExtra = $env:ORBIT_EXTRA_ALLOWED_ORIGINS
 $oldReads = $env:ORBIT_ENABLE_LIVE_READS
 $oldHosts = $env:ORBIT_REDEYE_ALLOWED_HOSTS
 try {
+    $env:ORBIT_ENABLE_REDEYE_WRITE_TESTS = $null
+    $env:ORBIT_REDEYE_WRITE_TEST_TARGET = $null
     $env:ORBIT_ENABLE_LIVE_READS = '1'
     if ($vendorHost) {
         $env:ORBIT_REDEYE_ALLOWED_HOSTS = (@($oldHosts -split ',') + @($vendorHost) | Where-Object { $_ } | Select-Object -Unique) -join ','
@@ -34,4 +38,6 @@ try {
     $env:ORBIT_ENABLE_LIVE_READS = $oldReads
     $env:ORBIT_REDEYE_ALLOWED_HOSTS = $oldHosts
     $env:ORBIT_EXTRA_ALLOWED_ORIGINS = $oldExtra
+    $env:ORBIT_ENABLE_REDEYE_WRITE_TESTS = $oldWrites
+    $env:ORBIT_REDEYE_WRITE_TEST_TARGET = $oldWriteTarget
 }

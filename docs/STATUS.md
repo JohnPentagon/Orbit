@@ -1,8 +1,10 @@
 # ORBIT foundation status
 
-6 November 2026. Bounded implementation authorised; real vendor validation and cloud deployment remain pending.
+9 November 2026. Bounded implementation authorised; real vendor validation and cloud deployment remain pending.
 
 ## Implemented
+
+Version 0.9: dedicated bSDD→RedEye existing-key single-value pilot, with keys/detail/history inspection, strict one-visible-revision/modifiable-state requirements, explicit native current/approved/operator evidence, scalar source validation, full returned-metadata preservation, 15-minute digest approval and exact connection/host/artefact write allowlisting. A durable attempt slot prevents duplicate POSTs after failures/restarts; post-write GET verification and read-only recheck distinguish HTTP acknowledgement from observed state. Normal launchers clear pilot write flags. No customer write or Windows launcher run was performed by the agent. See REDEYE_IMPORT_TEST.md.
 
 Version 0.8: additional encrypted connection profiles; Procore v1.0 company/project and v2.0 field-definition reads with named generation/parent-bound scope; first-response Meridian Explorer reader with optional Windows SSPI executor identity; administrator-configured Maintenance Connection/custom REST GET readers. Exact origin opt-in, TLS/redirect/size limits and post-read identity/generation checks apply. Manual bSDD/native-field bindings and target configuration snapshots now feed blocked remote parameter reviews; Procore has conservative, non-executable company-definition proposals. Added Revit/Navisworks/custom preparation choices and four per-connection parameter acceptance items. These are implemented readers with fixture validation, not customer-tested connectivity. No remote writer or desktop bridge is enabled. See ADDITIONAL_CONNECTIONS.md.
 
@@ -30,6 +32,8 @@ React/TypeScript portal and FastAPI backend; persistent, clearly labelled synthe
 
 ## Validation
 
+Version 0.9: **272 backend tests passed**. TypeScript/production build passed. The isolated Chromium pilot passed inspection, preview, separate approval, exact typed target, simulated POST/read-back, replay protection, reload and viewer/mobile boundaries. Foundation, integration, bSDD, read-connection, readiness and connection-preparation browser regressions also passed. The pilot transport was simulated; no customer write occurred. Windows launchers and the customer live write remain pending in TESTER_CHECKLIST.md.
+
 Version 0.8 backend validation: **230 tests passed**, including new auth/credential redaction, exact-origin/read gates, provider response shapes, Procore headers/paging/named scope/expiry, Windows transport options, configured REST mapping, privilege/generation changes and non-executable native proposals. TypeScript/production build passed. The new Chromium workflow passed encrypted credential handling, named Procore company/project selection, field inventory, blocked native proposals, configured Maintenance REST reads, manual bindings, revision invalidation and viewer/mobile boundaries against an isolated provider-JSON fixture server. Expanded connection-preparation, foundation, mapping/handover, bSDD, read-connection and readiness-diagnostic browser regressions also passed. Actual customer Procore, Meridian/SSPI and Maintenance Connection calls remain untested; no customer credential was available to the agent.
 
 Version 0.7: **191 backend tests passed**. TypeScript/production build passed. The new isolated Chromium parameter-import workflow passed real local definition/value writes and read-back, separate approval, required-value findings, preserve-existing preview, cancellation, review-package download, restart/reload visibility and viewer/mobile restrictions, with no JavaScript errors. Its bSDD source is a hand-authored fixture and vendor HTTP is disabled. Existing foundation, mapping/handover, bSDD and read-connection browser regressions also passed. This is not a live platform import validation.
@@ -44,7 +48,7 @@ Non-failing toolchain messages: Starlette's TestClient reports an httpx deprecat
 
 ## Not implemented / gates
 
-Production OIDC, invitations/MFA, cloud deployment, managed vault/database, PostgreSQL/RLS and job queue; complete vendor-verified Autodesk/RedEye setup, automatic renewal, exhaustive discovery and integration of real records into mappings; broader API-key lifecycle/permission verification; downloads and exports; executable mappings, vendor writes and bidirectional sync; AI tools; private bSDD authentication and validation against real vendor documents; ISO 19650 rule profiles; Revit/Navisworks bridges; billing; public connector submissions. Do not interpret catalogue entries or planned labels as support.
+Production OIDC, invitations/MFA, cloud deployment, managed vault/database, PostgreSQL/RLS and job queue; complete vendor-verified Autodesk/RedEye setup, automatic renewal, exhaustive discovery and integration of real records into mappings; broader API-key lifecycle/permission verification; downloads and exports; executable integration mappings, general/batch vendor writes and bidirectional sync; AI tools; private bSDD authentication and validation against real vendor documents; ISO 19650 rule profiles; Revit/Navisworks bridges; billing; public connector submissions. Do not interpret catalogue entries or planned labels as support.
 
 ## Next
 

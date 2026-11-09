@@ -43,3 +43,9 @@ Separate definition import from optional value updates. Bind a reviewed bSDD/pro
 Implement bounded documented Procore metadata reads and scoped named selection. Use Windows SSPI only for confirmed Meridian Explorer API access on an authorised executor; keep other Meridian interfaces distinct. Where Maintenance/custom contracts are unknown, require explicit administrator URL/auth/JSON mapping rather than invent vendor endpoints. Keep desktop options as version/SDK preparation until real bridges exist.
 
 Include per-connection native field references and scope in parameter review snapshots. Procore's published definition schema can produce review-only proposals for direct types; do not silently weaken integer, units, list or enum constraints. Company definitions, field-set applicability and record values remain separate capabilities. No write-enable flag bypass is introduced.
+
+## 9 November 2026 — isolated RedEye value import test
+
+Use successful RedEye/bSDD reads to prepare a concrete existing-key pilot, not claim metadata-key creation. Capture keys, artefact and visible history; require operator-confirmed disposable isolation/current-approved equivalence because the reviewed GET/POST revision semantics lack an established atomic precondition. Preserve all returned single-valued metadata and add only one validated value.
+
+Keep real execution behind a separate exact-target process opt-in and short digest approval, apart from the general import executor. Reserve the attempt durably before POST, never replay, and allow GET-only reconciliation after uncertainty. Separate observed HTTP acknowledgement from read-back state. Source type validation does not create native RedEye definitions or prove whole-project compliance.
