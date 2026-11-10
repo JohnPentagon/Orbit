@@ -1,8 +1,8 @@
-## Start the local UAT portal — version 0.10
+## Start the local UAT portal — version 0.11
 
-Double-click **Run-ORBIT.cmd**. It opens http://127.0.0.1:8000 and requires no terminal testing choices. Keep that one server window open. Set up credentials in **Read connections**, select bSDD definitions in the portal, and use **RedEye import test** for inspect → preview → separate approval → enable this approved test → confirm/write → read-back. Connection identifiers and hostnames are taken from the saved profile automatically. See [the UAT guide](docs/REDEYE_IMPORT_TEST.md).
+Double-click **Run-ORBIT.cmd**. It opens http://127.0.0.1:8000 and requires no terminal testing choices. Keep that one server window open. Set up credentials in **Read connections**, select bSDD definitions in the portal, and use **RedEye metadata** for select → verify, or preview → confirm update → read-back. Connection identifiers and hostnames are taken from the saved profile automatically. See [the UAT guide](docs/REDEYE_METADATA.md).
 
-Stop an older server once before updating; preserve `.local/orbit.db` and `.local/vault.key` together. The portal remains a trusted local test application with synthetic identities. A real RedEye write requires explicitly enabling an exact approved test in the browser; simply opening the portal never writes. The older launchers below are advanced alternatives, not steps required for UAT.
+Stop an older server once before updating; preserve `.local/orbit.db` and `.local/vault.key` together. The portal remains a trusted local test application with synthetic identities. A real RedEye write requires reviewing the exact before/after change and confirming it in the browser; simply opening the portal never writes. The older launchers below are advanced alternatives, not steps required for UAT.
 
 # Run ORBIT on your Windows computer
 
@@ -96,6 +96,6 @@ Version 0.7 adds **Parameter imports**. With a project bSDD reference enabled, p
 
 Version 0.8 adds **Additional connections** for Procore, Meridian Explorer and administrator-configured Maintenance/custom REST. The read-test launcher now accepts optional exact HTTPS origins (host and optional port, no application path). Store credentials only through the encrypted portal form. Procore uses an existing access token, then named company/project selection; it does not yet provide Procore browser OAuth. For Windows-integrated Meridian Explorer, optional packages can be installed with `Setup-Orbit-WindowsAuth.ps1` after normal setup. That helper and real SSPI negotiation still need Windows testing. See [docs/ADDITIONAL_CONNECTIONS.md](docs/ADDITIONAL_CONNECTIONS.md) for prerequisites and limits. Real parameter writers remain disabled.
 
-## bSDD → RedEye value import pilot
+## RedEye metadata verification and updates
 
-Version 0.10 updates **RedEye import test** to run entirely in the browser after launching Run-ORBIT.cmd. Inspect one disposable artefact, map a selected bSDD property to an existing blank/unassigned key, review and approve, enable the exact approved test, then type its write confirmation and execute. No terminal target entry or restart is required between steps. This can make a real metadata write, never creates keys and never retries a POST. See [the UAT guide](docs/REDEYE_IMPORT_TEST.md) and tick actual results in the checklist. Windows launcher execution remains pending.
+Version 0.11 adds **RedEye metadata**. Select any existing field on a chosen artefact. Use **Verify only**, with an optional expected value, or **Update value** with explicit replacement of populated values. bSDD is optional. Review the before/after preview, confirm the target revision and save; no role switching or per-test enabling is required. A successful update allows another fresh edit on the same artefact. This makes real metadata writes when confirmed, never creates keys and never automatically retries. See [the metadata guide](docs/REDEYE_METADATA.md) and record actual results in the checklist. Windows launcher execution remains pending.

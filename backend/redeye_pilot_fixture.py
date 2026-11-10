@@ -38,7 +38,7 @@ def create_fixture_app():
     def fixture(base,secret,cfg,method,api_path,payload=None,transport=None):
         if method=='POST':
             assert api_path=='/api/v1/artefacts/777'
-            state['metadata']=[{'id':100+n,'key_id':next(k['id'] for k in KEYS if k['name']==row['name']),'key_name':row['name'],'value':row['value'][0]} for n,row in enumerate(payload['metadata'])]
+            state['metadata']=[{'id':100+i*100+n,'key_id':next(k['id'] for k in KEYS if k['name']==row['name']),'key_name':row['name'],'value':value} for i,row in enumerate(payload['metadata']) for n,value in enumerate(row['value'])]
             state['modified']='2026-11-09T10:00:00Z'
             return None
         if api_path=='/api/v1/metadata-keys':return copy.deepcopy(KEYS)

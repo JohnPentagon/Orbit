@@ -173,7 +173,7 @@ def test_fixed_vendor_transport_headers_no_redirect_retry_or_secret_echo():
     cfg={'auth_header':'Authorization','auth_prefix':'Bearer'};seen=[]
     def handler(request):
         seen.append(request);assert request.url.host=='api.redeyedms.com' and request.headers['authorization']=='Bearer synthetic-key'
-        assert request.headers['user-agent']=='ORBIT/0.10.0'
+        assert request.headers['user-agent']=='ORBIT/0.11.0'
         if request.method=='POST':assert json.loads(request.content)=={'metadata':[]};return httpx.Response(200)
         return httpx.Response(200,json={'value':'public'})
     t=httpx.MockTransport(handler)

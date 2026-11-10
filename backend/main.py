@@ -30,7 +30,7 @@ PROVIDERS = [
 for provider in PROVIDERS:
     provider['maturity'] = {
         'forma': 'Bounded metadata reader; customer OAuth validation pending',
-        'redeye': 'Metadata reader and isolated existing-key value-test pilot',
+        'redeye': 'Metadata reader and selected-field UAT value editor',
         'procore': 'Company/project/field reader; customer validation pending',
         'meridian': 'Explorer reader; Windows and customer validation pending',
         'maintenance': 'Configured REST reader; administrator contract required',
@@ -116,7 +116,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.10.0")
+    app = FastAPI(title="ORBIT foundation", version="0.11.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -318,6 +318,8 @@ def create_app(db_path=None, demo=None):
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections
     register_read_connections(app, db, identity, permit, project_check, audit, vault, now)
+    from backend.redeye_metadata import register_redeye_metadata
+    register_redeye_metadata(app, db, identity, permit, project_check, audit, vault, now)
     from backend.redeye_pilot import register_redeye_pilot
     register_redeye_pilot(app, db, identity, permit, project_check, audit, vault, now)
     from backend.additional_connections import register_additional_connections

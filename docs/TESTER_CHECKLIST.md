@@ -1,6 +1,6 @@
 # ORBIT tester checklist
 
-Updated 9 November 2026. Keep this list for later; no testing is needed immediately.
+Updated 10 November 2026. Keep this list for later; no testing is needed immediately.
 
 The portal's **Connection preparation** page saves a checklist per project and intended connection, with Passed / Failed / Blocked / Not applicable / Untested and a non-secret evidence note. Owners edit; other project roles view. Export checklist downloads a JSON copy through your browser. Records are stored in your local `.local/orbit.db`; back up the database and its matching vault key securely before replacing a local installation. Never commit or share that folder.
 
@@ -83,6 +83,19 @@ Current Meridian support: saved preparation records, an offline Explorer preview
 General Parameter imports behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
 
 General import destinations remain blocked; the separate v0.9 RedEye page provides the restricted pilot described below. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+
+## Selected-field RedEye metadata — version 0.11
+
+- [ ] Update/restart Run-ORBIT.cmd on Windows. Confirm RedEye metadata opens and reuses the saved working connection without terminal testing prompts.
+- [ ] Load a chosen artefact and verify an existing field, first without an expected value, then with a matching and differing expected value. Confirm verification sends no write.
+- [ ] Verify with bSDD disabled; optionally select a saved bSDD property and check actual/expected type, unit and allowed-value findings.
+- [ ] Preview an existing-field replacement with explicit overwrite selection, confirm the revision and save. Check the exact native field, all other metadata and revision in RedEye.
+- [ ] Fill an unassigned key, check empty-string behaviour and test multiple values only where native RedEye supports them. Key creation/deletion are not offered.
+- [ ] After a verified update, freshly inspect and make another selected-field edit to the same artefact without a role switch, arming step or server restart.
+- [ ] If uncertain, inspect native RedEye and use GET-only recheck. Record POST acknowledgement separately from observed state. Test explicit manual closure only after reviewing the original native target; it must not claim verified API success or send another POST. Do not delete attempts or force retries.
+- [ ] Record observed API-key write permissions, revision semantics and cleanup in the authorised test environment.
+
+No customer write is marked passed by the agent. Backend/browser fixture validation is recorded in STATUS.md; it is distinct from these customer acceptance items. See [REDEYE_METADATA.md](REDEYE_METADATA.md).
 
 ## bSDD → RedEye isolated value pilot — version 0.10
 

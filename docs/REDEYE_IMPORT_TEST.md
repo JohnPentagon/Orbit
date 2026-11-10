@@ -1,3 +1,5 @@
+> Previous v0.9/v0.10 pilot instructions. The v0.11 portal now uses [RedEye metadata](REDEYE_METADATA.md) for selected-field verification and updates, including existing values and optional bSDD. Its owner UAT flow does not require separate approval/arming. These legacy backend pilot routes remain available for old receipts and uncertain-outcome rechecks.
+
 # bSDD → RedEye isolated value import test
 
 Version 0.10, 9 November 2026. The owner reports successful RedEye and bSDD reads. This is the next **single-value live pilot**, not a general dictionary/key import or document transfer. No customer write was performed by the agent.

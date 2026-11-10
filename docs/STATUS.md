@@ -1,8 +1,10 @@
 # ORBIT foundation status
 
-9 November 2026. Bounded implementation authorised; real vendor validation and cloud deployment remain pending.
+10 November 2026. Bounded implementation authorised; real vendor validation and cloud deployment remain pending.
 
 ## Implemented
+
+Version 0.11: RedEye metadata replaces the restrictive pilot page in navigation. Owners can select any existing key, verify observed/expected values without writes, or explicitly replace/fill values with before/after preview and confirmation. bSDD is optional; single/multiple scalar values are supported. No separate role approval/arming or fixed revision-count/disposable-target requirement applies to this UAT editor. Fresh destination/source checks, current/approved target confirmation, durable per-preview no-replay and uncertain-outcome reconciliation remain. Verified updates permit another fresh edit on the same artefact. Native key creation remains unsupported. See REDEYE_METADATA.md.
 
 Version 0.10: Run-ORBIT.cmd opens browser-based local UAT with no testing prompts. An owner can enable only an exact approved RedEye test for at most 10 minutes in the current browser session, disable it, then explicitly confirm/write and verify without switching launchers. Host/connection identifiers come from the saved profile. Grants are consumed before POST and do not survive session rotation or server restart. Legacy advanced launchers remain available. Windows launch and customer write acceptance remain pending.
 
@@ -33,6 +35,8 @@ New increment: exact project/connection integration profiles; multi-field mappin
 React/TypeScript portal and FastAPI backend; persistent, clearly labelled synthetic Forma/RedEye document comparison; tenant/project permissions; five synthetic roles per organisation; owner management of existing synthetic memberships/project grants; connection catalogue; encrypted local development credentials; audited comparison and approval activity; mapping previews and separate-person digest-bound approval records; SQL migration tracking; responsive desktop/mobile layouts.
 
 ## Validation
+
+Version 0.11: **333 backend tests passed**, including new native-field verification, expected mismatch, optional bSDD, explicit overwrite, multiple values/preservation, repeated same-artefact edits, stale/session/source/role boundaries, failed preflight, interrupted/uncertain writes, GET-only reconciliation and explicit manual closure without claiming API success. TypeScript/production build passed. Chromium passed field selection, fresh match/mismatch verification, overwrite confirmation, two simulated edits on the same artefact without role switching/arming, multiple values, read-back, replay, reload and viewer/mobile boundaries. Transport was simulated; customer write permissions/revision behaviour, native multivalue acceptance and Windows launcher execution remain untested by the agent.
 
 Version 0.10: **284 backend tests passed**, including browser-grant mode/approval/digest boundaries, enable/disable, exact-preview binding, expiry, session rotation, restart, changed configuration/source and cross-origin rejection. TypeScript/production build passed. Chromium passed the single-server browser UAT flow with enable/disable, separate approval, typed execution, simulated POST/read-back, replay protection and viewer/mobile boundaries. No customer write or Windows launcher execution was performed.
 

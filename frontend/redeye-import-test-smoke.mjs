@@ -1,39 +1,37 @@
-// Requires an isolated pilot fixture server. The only RedEye POST is simulated.
+// Isolated transport fixture only: never sends a real vendor HTTP request.
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const base=process.env.ORBIT_TEST_URL||'http://127.0.0.1:8003';
-const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-async function role(id){await page.getByLabel('Test identity',{exact:true}).selectOption(id);await page.getByText(id.split('-')[1]+' · '+id,{exact:true}).waitFor();}
+const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+async function load(){await page.getByRole('button',{name:'Load metadata fields',exact:true}).click();await page.getByText('Metadata loaded. No write sent.',{exact:true}).waitFor();}
+async function save(){await page.getByRole('button',{name:'Preview metadata update',exact:true}).click();await page.getByText('Before/after preview ready. No write sent.',{exact:true}).waitFor();const button=page.getByRole('button',{name:'Confirm and save to RedEye',exact:true});assert.equal(await button.isDisabled(),true);await page.getByLabel('Confirm metadata change',{exact:true}).check();await page.getByLabel('Confirm metadata revision',{exact:true}).check();await button.click();await page.getByText('Selected field and all preserved metadata matched.',{exact:true}).waitFor();}
 try{
  await page.goto(base);await page.getByLabel('Choose a synthetic identity').selectOption('north-owner');await page.getByRole('button',{name:'Enter workspace'}).click();
- await page.getByRole('button',{name:'RedEye import test',exact:true}).click();
- await page.getByLabel('RedEye pilot connection',{exact:true}).selectOption('11111111-2222-3333-4444-555555555555');
- await page.getByLabel('RedEye pilot artefact ID',{exact:true}).fill('777');
- await page.getByRole('button',{name:'Inspect RedEye target',exact:true}).click();await page.getByText('Artefact, keys and revision history inspected. No write sent.',{exact:true}).waitFor();
- await page.getByLabel('RedEye pilot bSDD property',{exact:true}).selectOption({label:'Rating · String'});
- await page.getByLabel('RedEye pilot metadata key',{exact:true}).selectOption('20');
- await page.getByLabel('RedEye pilot typed value',{exact:true}).fill('"ORBIT_TEST"');
- await page.getByLabel('RedEye pilot evidence',{exact:true}).fill('Isolated browser fixture; no customer network');
- for(const id of ['disposable_isolated_target','current_approved_revision_confirmed','metadata_contract_confirmed','mapping_type_units_confirmed'])await page.getByLabel(id,{exact:true}).check();
- await page.getByRole('button',{name:'Prepare RedEye write preview',exact:true}).click();await page.getByText('Real RedEye test preview saved. No write has been sent.',{exact:true}).waitFor();
- let job=page.locator('.parameter-job').first();assert.match(await job.innerText(),/Pilot Rating ← Rating/);
- assert.equal(await job.getByRole('button',{name:'Write this one RedEye test value',exact:true}).count(),0);
- await role('north-approver');job=page.locator('.parameter-job').first();await job.getByRole('button',{name:'Approve RedEye test',exact:true}).click();await page.getByText('Test approved; no write sent.',{exact:true}).waitFor();
- await role('north-owner');job=page.locator('.parameter-job').first();
- const button=job.getByRole('button',{name:'Write this one RedEye test value',exact:true});assert.equal(await button.isDisabled(),true);
- await job.getByRole('textbox').fill('WRITE 777');assert.equal(await button.isDisabled(),true);
- await job.getByRole('button',{name:'Enable this approved UAT test',exact:true}).click();
- await page.getByText('This approved test is enabled for up to 10 minutes in this browser session. No write sent.',{exact:true}).waitFor();
- await job.getByRole('button',{name:'Disable this UAT test',exact:true}).click();assert.equal(await button.isDisabled(),true);
- await job.getByRole('button',{name:'Enable this approved UAT test',exact:true}).click();await button.click();
- await page.getByText('RedEye test value and preserved metadata verified by read-back.',{exact:true}).waitFor();assert.match(await job.innerText(),/POST HTTP 200 was observed/);
- const context=await (await page.request.get(base+'/api/projects/harbour/redeye-import-tests')).json();const test=context.tests[0];
- const repeat=await page.request.post(base+'/api/projects/harbour/redeye-import-tests/'+test.id+'/execute',{data:{digest:test.digest,confirmation:'WRITE 777'}});assert.equal((await repeat.json()).status,'verified');
- await page.reload();await page.getByRole('button',{name:'RedEye import test',exact:true}).click();await page.locator('.parameter-job').first().getByText('Read-back verified',{exact:true}).waitFor();
- await role('north-viewer');assert.equal(await page.getByRole('button',{name:'Inspect RedEye target',exact:true}).count(),0);
- assert.equal(await page.getByRole('button',{name:'Write this one RedEye test value',exact:true}).count(),0);
+ await page.getByRole('button',{name:'RedEye metadata',exact:true}).click();
+ await page.getByLabel('Metadata connection',{exact:true}).selectOption('11111111-2222-3333-4444-555555555555');
+ await page.getByLabel('Metadata artefact ID',{exact:true}).fill('777');await load();
+ await page.getByLabel('Metadata field',{exact:true}).selectOption('10');
+ await page.getByRole('button',{name:'Verify selected field',exact:true}).click();await page.getByText('Current value retrieved',{exact:true}).waitFor();
+ await page.getByLabel('Compare expected metadata value',{exact:true}).check();await page.getByLabel('Metadata value',{exact:true}).fill('keep exactly');
+ await page.getByRole('button',{name:'Verify selected field',exact:true}).click();await page.getByText('Expected value matches',{exact:true}).waitFor();
+ await page.getByLabel('Metadata value',{exact:true}).fill('different');await page.getByRole('button',{name:'Verify selected field',exact:true}).click();await page.getByText('Expected value differs',{exact:true}).waitFor();
+ await page.getByLabel('Metadata action',{exact:true}).selectOption('update');await page.getByLabel('Metadata value',{exact:true}).fill('User chosen new value');
+ await page.getByRole('button',{name:'Preview metadata update',exact:true}).click();await page.getByRole('alert').getByText('Select Replace existing value to update a populated field.',{exact:true}).waitFor();
+ await page.getByLabel('Replace existing metadata value',{exact:true}).check();await save();
+ assert.equal(await page.getByRole('button',{name:'Approve RedEye test',exact:true}).count(),0);
+ let ctx=await (await page.request.get(base+'/api/projects/harbour/redeye-metadata')).json();const first=ctx.updates[0];assert.equal(first.status,'verified');assert.equal(first.plan.source,null);
+ const replay=await page.request.post(base+'/api/projects/harbour/redeye-metadata/'+first.id+'/execute',{data:{digest:first.digest,confirmed:true,current_revision_confirmed:true}});assert.equal((await replay.json()).status,'verified');
+ await load();await page.getByLabel('Metadata field',{exact:true}).selectOption('20');
+ await page.getByLabel('Metadata value format',{exact:true}).selectOption('json');await page.getByLabel('Metadata value',{exact:true}).fill('["first", "second"]');await save();
+ ctx=await (await page.request.get(base+'/api/projects/harbour/redeye-metadata')).json();assert.equal(ctx.updates.filter(j=>j.status==='verified').length,2);
+ await load();await page.getByLabel('Metadata field',{exact:true}).selectOption('20');await page.getByLabel('Metadata action',{exact:true}).selectOption('verify');
+ await page.getByLabel('Metadata value',{exact:true}).fill('["first", "second"]');await page.getByRole('button',{name:'Verify selected field',exact:true}).click();await page.getByText('Expected value matches',{exact:true}).waitFor();
+ await page.reload();await page.getByRole('button',{name:'RedEye metadata',exact:true}).click();await page.locator('.parameter-job').first().waitFor();
+ await page.getByLabel('Test identity',{exact:true}).selectOption('north-viewer');await page.getByText('viewer · north-viewer',{exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Load metadata fields',exact:true}).count(),0);
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
- await page.screenshot({path:'/workspace/Orbit/.local/screenshots/redeye-import-test-mobile.png',fullPage:true});
- assert.deepEqual(errors,[]);console.log('RedEye pilot browser passed: real app inspection/preview, separate approval, exact typed target, simulated POST/read-back, replay protection, reload and viewer/mobile boundaries. No customer write or real vendor HTTP.');
+ await page.screenshot({path:'/workspace/Orbit/.local/screenshots/redeye-metadata-mobile.png',fullPage:true});assert.deepEqual(errors,[]);
+ console.log('Metadata browser UAT passed: inspect any field, fresh verify/match/mismatch, explicit overwrite, no role switching/arming, two simulated updates on the same artefact, multi-values, read-back, replay, reload, viewer/mobile. No customer writes.');
 }finally{await browser.close();}

@@ -53,3 +53,7 @@ Keep real execution behind a separate exact-target process opt-in and short dige
 ### 9 November 2026 — browser-based local UAT
 
 The user requested a single locally running portal instead of terminal testing prompts and launcher switching. Run-ORBIT.cmd now starts UAT reads with no test prompts. The browser authorises one approved RedEye preview for at most 10 minutes, bound to its current session, exact digest and destination generation/host/artefact. Explicit final write confirmation and durable one-attempt handling remain. Grants are in memory only and consumed before POST. General writes, key creation and production identity are unchanged in scope.
+
+### 10 November 2026 — selected-field metadata UAT
+
+The user requested less restrictive selection and direct verification/update of any existing RedEye metadata field. A new owner UAT editor supports explicit overwrite, optional bSDD and multiple string-transport values. Verification uses fresh GETs; updating uses a session/digest-bound before/after preview and two final confirmations, with no separate approval/arming. The old permanent connection/artefact attempt slot is replaced in this editor by per-preview no-replay and unresolved-target exclusion; verified changes allow another fresh edit. Fixed revision counts and disposable-only evidence are removed, while current/approved targeting, modifiable state, preservation and real remote concurrency limits remain explicit. Key creation is not claimed.

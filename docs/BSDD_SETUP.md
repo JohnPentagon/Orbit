@@ -45,7 +45,7 @@ Implemented versioned GET endpoints:
 - `/api/Dictionary/v1/Classes` with dictionary `Uri`, `Offset`, `Limit`.
 - `/api/Class/v1` with class `Uri` and `IncludeClassProperties=true`.
 
-Headers: `Accept: application/json` and `User-Agent: ORBIT/0.10.0`. No API key, bearer token or cookie is sent by this adapter. These public operations succeeded anonymously. Private/secured dictionaries and GraphQL authentication are separate capabilities and are not implemented.
+Headers: `Accept: application/json` and `User-Agent: ORBIT/0.11.0`. No API key, bearer token or cookie is sent by this adapter. These public operations succeeded anonymously. Private/secured dictionaries and GraphQL authentication are separate capabilities and are not implemented.
 
 The identifier URL is validated as a canonical versioned buildingSMART identifier and sent as a query parameter to the fixed API. It is **never fetched directly**. Arbitrary hosts, HTTP, credentials, ports, query strings, fragments and traversal-like identifiers are rejected. Outbound requests keep TLS verification, use the configured proxy, refuse redirects, time out, and cap decoded response bytes at 2 MB. Network/contract/rate-limit errors leave the existing saved settings unchanged. This public reference adapter does not use the customer-connector live-read opt-in or send vendor project data to bSDD.
 
@@ -73,3 +73,5 @@ The API documentation explicitly advises versioned API calls for system-to-syste
 The separate **Parameter imports** workflow now binds selected bSDD snapshots to reviewed definition/value jobs and enforces supported types/allowed values/units in local synthetic execution. It can create local field definitions and populate optional document values with read-back/quality checks. Existing integration mapping profiles remain separate and are not silently changed. Real platform parameter writes are not implemented; see PARAMETER_IMPORTS.md for precise scope and outstanding API prerequisites.
 
 The v0.9 RedEye import-test pilot can associate one selected validated bSDD value with one existing native metadata key on an operator-confirmed disposable artefact. This is not dictionary/key creation; see REDEYE_IMPORT_TEST.md.
+
+Version 0.11: [RedEye metadata](REDEYE_METADATA.md) also works without any bSDD selection. Optionally choose a selected property to validate proposed/observed values and units. This does not create a native metadata key or enforce its schema on the vendor.

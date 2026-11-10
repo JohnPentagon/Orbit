@@ -1,4 +1,4 @@
-**Local UAT (v0.10):** double-click `Run-ORBIT.cmd`, then connect and test in the browser. No terminal test prompts, launcher switching or copying connection IDs. The **RedEye import test** page enables only an exact approved test for 10 minutes, followed by explicit write confirmation. [UAT instructions](docs/REDEYE_IMPORT_TEST.md).
+**Local UAT (v0.11):** double-click `Run-ORBIT.cmd`, then open **RedEye metadata**. Select any existing field, verify its current/expected value or preview and confirm an update—including replacing populated values. bSDD is optional. No role switching, per-test enabling or terminal target entry. [Metadata guide](docs/REDEYE_METADATA.md).
 
 # ORBIT
 
