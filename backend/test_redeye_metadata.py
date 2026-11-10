@@ -288,3 +288,76 @@ def test_manual_resolution_requires_current_owner_and_exact_job(editor):
     c.post('/api/demo/session',json={'user_id':'south-owner'})
     assert c.post(ROOT+'/'+j['id']+'/resolve',json={'digest':j['digest'],'confirmed':True}).status_code==404
     assert state['posts']==1
+
+
+@pytest.mark.parametrize('change,code',[
+    ('uat','uat_not_enabled'),('session','preview_session_changed'),('expired','preview_expired'),
+    ('digest','preview_digest_mismatch'),('confirmation','confirmation_missing'),('generation','connection_changed')])
+def test_save_conflict_has_actionable_safe_reason(editor,monkeypatch,caplog,change,code):
+    c,path,ident,state=editor;j=preview(c,ident)
+    extra={}
+    if change=='uat':monkeypatch.delenv('ORBIT_UAT_MODE')
+    if change=='session':c.post('/api/demo/session',json={'user_id':'north-owner'})
+    if change=='expired':
+        with sqlite3.connect(path) as db:db.execute('UPDATE redeye_metadata_updates SET expires=0')
+    if change=='generation':
+        with sqlite3.connect(path) as db:db.execute('UPDATE read_connections SET generation=generation+1')
+    if change=='confirmation':extra['confirmed']=False
+    if change=='digest':j['digest']='0'*64
+    r=execute(c,j,**extra)
+    assert r.status_code==409,r.text
+    detail=r.json()['detail'];assert detail['code']==code and detail['next_action'] and detail['write_sent_by_this_request'] is False
+    assert code in caplog.text and 'synthetic-pilot-key' not in caplog.text+r.text and 'keep exactly' not in caplog.text
+    assert state['posts']==0
+
+
+def test_unresolved_save_names_blocking_attempt_without_metadata(editor):
+    c,_,ident,state=editor;first=preview(c,ident,key=20)
+    state['post_mode']='no_change';assert execute(c,first).json()['status']=='needs_review'
+    second=preview(c,ident,key=10)
+    r=execute(c,second);assert r.status_code==409
+    detail=r.json()['detail'];assert detail['code']=='earlier_update_unresolved'
+    assert detail['blocking_updates']==[{'id':first['id'],'status':'needs_review','source':'metadata'}]
+    assert detail['write_sent_by_this_request'] is False and state['posts']==1
+
+
+def legacy_attempt(c,ident,monkeypatch):
+    from backend.test_redeye_pilot import inspect as old_inspect, preview as old_preview, approve as old_approve, enable as old_enable, execute as old_execute, REV
+    original=vendor.request_vendor
+    def transport(*args,**kwargs):
+        if args[3]=='GET' and args[4].endswith('/versionhistory'):return {'revision':copy.deepcopy(REV)}
+        return original(*args,**kwargs)
+    monkeypatch.setattr(vendor,'request_vendor',transport)
+    j=old_preview(c,old_inspect(c,ident));old_approve(c,j);old_enable(monkeypatch,ident)
+    assert old_execute(c,j).json()['status']=='needs_review'
+    return j
+
+
+def test_earlier_pilot_can_be_closed_after_manual_review_without_deleting_history(editor,monkeypatch):
+    c,path,ident,state=editor;state['post_mode']='no_change'
+    old=legacy_attempt(c,ident,monkeypatch)
+    j=preview(c,ident)
+    r=execute(c,j);assert r.status_code==409 and r.json()['detail']['code']=='earlier_update_unresolved'
+    assert r.json()['detail']['blocking_updates'][0]['source']=='earlier_pilot'
+    root=ROOT+'/legacy/'+old['id']+'/resolve'
+    assert c.post(root,json={'digest':old['digest']}).status_code==409
+    receipt=c.post(root,json={'digest':old['digest'],'confirmed':True}).json()
+    assert receipt['status']=='reviewed' and not receipt['read_back_verified'] and state['posts']==1
+    with sqlite3.connect(path) as db:
+        assert db.execute('SELECT count(*) FROM redeye_import_attempts').fetchone()[0]==1
+        assert db.execute('SELECT status FROM redeye_import_tests WHERE id=?',(old['id'],)).fetchone()[0]=='reviewed'
+    assert c.get(ROOT).json()['legacy_unresolved']==[]
+    state['post_mode']='normal'
+    assert execute(c,j).json()['status']=='verified' and state['posts']==2
+
+
+@pytest.mark.parametrize('change',['role','tenant','digest','status'])
+def test_legacy_manual_closure_is_scoped_and_never_a_retry(editor,monkeypatch,change):
+    c,path,ident,state=editor;state['post_mode']='no_change';old=legacy_attempt(c,ident,monkeypatch)
+    if change=='role':c.post('/api/demo/session',json={'user_id':'north-viewer'})
+    if change=='tenant':c.post('/api/demo/session',json={'user_id':'south-owner'})
+    if change=='digest':old['digest']='0'*64
+    if change=='status':
+        with sqlite3.connect(path) as db:db.execute("UPDATE redeye_import_tests SET status='attempting' WHERE id=?",(old['id'],))
+    r=c.post(ROOT+'/legacy/'+old['id']+'/resolve',json={'digest':old['digest'],'confirmed':True})
+    assert r.status_code in {403,404,409} and state['posts']==1

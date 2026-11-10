@@ -57,3 +57,7 @@ The user requested a single locally running portal instead of terminal testing p
 ### 10 November 2026 — selected-field metadata UAT
 
 The user requested less restrictive selection and direct verification/update of any existing RedEye metadata field. A new owner UAT editor supports explicit overwrite, optional bSDD and multiple string-transport values. Verification uses fresh GETs; updating uses a session/digest-bound before/after preview and two final confirmations, with no separate approval/arming. The old permanent connection/artefact attempt slot is replaced in this editor by per-preview no-replay and unresolved-target exclusion; verified changes allow another fresh edit. Fixed revision counts and disposable-only evidence are removed, while current/approved targeting, modifiable state, preservation and real remote concurrency limits remain explicit. Key creation is not claimed.
+
+### 10 November 2026 — actionable save conflicts
+
+The customer reported only an execute 409 access-log entry, so its actual cause cannot be inferred. Add fixed safe conflict reasons/actions to the response and log; show the message beside the preview and scroll the banner into view. Split session rotation from expiry. Earlier pilot uncertainties need an explicit native-manual-review closure path, with receipt/audit/attempt history retained and no retry or success claim, so old records do not permanently block the new editor.

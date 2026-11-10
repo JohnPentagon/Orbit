@@ -48,3 +48,21 @@ The editor accepts up to 100 proposed scalar values, 10 KB of input and 100 KB o
 The reviewed API provides no established atomic If-Match/revision precondition. A fresh read-before-write reduces stale updates but cannot eliminate the remote race window. The browser confirmation and native revision check remain necessary. History/read-back are observations, not continuous monitoring or proof of ISO/IDS compliance.
 
 Automated tests use simulated vendor transport and isolated databases. Real API-key write permissions, revision behaviour, multivalue acceptance and Windows launcher execution still need customer validation in [TESTER_CHECKLIST.md](TESTER_CHECKLIST.md).
+
+## Diagnosing a 409 when saving (v0.11.1)
+
+A terminal access-log line such as `POST .../execute 409 Conflict` does not contain the rejection reason. The portal now scrolls to the error and repeats it beside the save preview; the server also logs a safe `ORBIT RedEye save blocked [reason_code]` line. Copy that reason rather than keys, request bodies or customer values.
+
+| Reason code | Next step |
+| --- | --- |
+| `uat_not_enabled` | Stop the old server once; start Run-ORBIT.cmd from the updated folder and reload. |
+| `preview_session_changed` | Another sign-in/identity change, including another tab, rotated the cookie. Remain signed in as owner and load/preview again. |
+| `preview_expired` | Load metadata and preview again; validity is 30 minutes. |
+| `preview_digest_mismatch` | Discard the stale preview and prepare the intended change again. |
+| `confirmation_missing` | Check both final change/revision confirmations. |
+| `connection_changed` | Reload metadata using the current saved connection/credential and prepare a fresh preview. |
+| `earlier_update_unresolved` | Review the history entry or earlier-pilot card, use GET-only recheck, and inspect native RedEye before any manual closure. |
+
+These coded execute rejections occur before this request reserves/sends a RedEye write; an earlier uncertain attempt may still have changed the remote target. The response identifies blocking attempts without copying their metadata. A frontend/server version mismatch also produces an update/restart message.
+
+The earlier v0.9/v0.10 pilot now has **Close earlier pilot after manual review** on its card. Explicit acknowledgement closes only its local uncertain status, preserves the receipt, audit trail and durable attempt slot, and never retries/deletes/rolls back a vendor operation or claims verified success. It permits a fresh selected-field preview once the original outcome has been reviewed. An interrupted `attempting` pilot must first be rechecked before manual closure.

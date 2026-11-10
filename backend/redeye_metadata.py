@@ -1,6 +1,7 @@
 """User-selected RedEye metadata verification and updates for trusted local UAT."""
 import hashlib
 import json
+import logging
 import os
 import secrets
 import time
@@ -83,6 +84,12 @@ def read_target(base, secret, cfg, artefact_id):
 
 
 def register_redeye_metadata(app, db, identity, permit, project_check, audit, vault, now):
+    def conflict(code, message, next_action, blockers=None):
+        # Fixed reasons only: never log API keys, metadata values or provider bodies.
+        logging.getLogger('uvicorn.error').warning('ORBIT RedEye save blocked [%s]: %s', code, next_action)
+        raise HTTPException(409, {'code': code, 'message': message, 'next_action': next_action,
+                                  'write_sent_by_this_request': False, 'blocking_updates': blockers or []})
+
     def session(request):
         return hashlib.sha256(request.cookies.get('orbit_session', '').encode()).hexdigest()
 
@@ -173,7 +180,7 @@ def register_redeye_metadata(app, db, identity, permit, project_check, audit, va
 
     def exact(row, body):
         if not secrets.compare_digest(row['digest'], body.digest):
-            raise HTTPException(409, 'Review the exact metadata change again.')
+            conflict('preview_digest_mismatch', 'The save request does not match this preview.', 'Discard the preview, load metadata again and prepare the intended change.')
 
     def save(c, who, project, row, status, reason, http_ok=False, verified=False):
         old = json.loads(row['receipt']) if row['receipt'] else {}
@@ -201,8 +208,16 @@ def register_redeye_metadata(app, db, identity, permit, project_check, audit, va
                         base = 'Unverified host; edit Read connections'
                     connections.append({'id': r['id'], 'name': r['name'], 'base_url': base})
             jobs = [public(r) for r in c.execute('SELECT * FROM redeye_metadata_updates WHERE tenant_id=? AND project_id=? ORDER BY created DESC,rowid DESC', (who['tenant_id'], project))]
-            legacy = [{'id': r['id'], 'digest': r['digest'], 'artefact_id': r['artefact_id'], 'status': r['status']} for r in c.execute("SELECT id,digest,artefact_id,status FROM redeye_import_tests WHERE tenant_id=? AND project_id=? AND status IN ('attempting','needs_review')", (who['tenant_id'], project))]
-        return {'connections': connections, 'updates': jobs, 'legacy_unresolved': legacy, 'uat_mode': os.getenv('ORBIT_UAT_MODE') == '1'}
+            legacy = []
+            for r in c.execute("SELECT id,digest,artefact_id,status,connection_id,preview FROM redeye_import_tests WHERE tenant_id=? AND project_id=? AND status IN ('attempting','needs_review')", (who['tenant_id'], project)):
+                plan = json.loads(r['preview'])
+                try:
+                    original_base = approved_base('redeye', plan['base_url'], [h.strip() for h in os.getenv('ORBIT_REDEYE_ALLOWED_HOSTS', '').lower().split(',')])
+                except ProviderError:
+                    original_base = 'Unverified original host; review the saved setup'
+                legacy.append({'id': r['id'], 'digest': r['digest'], 'artefact_id': r['artefact_id'], 'status': r['status'],
+                               'connection_name': plan['connection_name'], 'base_url': original_base})
+        return {'connections': connections, 'updates': jobs, 'legacy_unresolved': legacy, 'uat_mode': os.getenv('ORBIT_UAT_MODE') == '1', 'server_version': app.version}
 
     @app.post('/api/projects/{project}/redeye-metadata/candidates')
     def candidates(project: str, body: ConnectionSelection, request: Request, who=Depends(identity)):
@@ -313,22 +328,28 @@ def register_redeye_metadata(app, db, identity, permit, project_check, audit, va
     def execute(project: str, ident: str, body: Confirm, request: Request, who=Depends(identity)):
         permit(who, 'connection')
         if os.getenv('ORBIT_UAT_MODE') != '1':
-            raise HTTPException(409, 'Open Run-ORBIT.cmd for browser UAT updates.')
+            conflict('uat_not_enabled', 'The running server is not in browser UAT mode.', 'Stop the old ORBIT server once and open Run-ORBIT.cmd, then reload the portal.')
         with db() as c:
             c.execute('BEGIN IMMEDIATE')
             row = job(c, who, project, ident)
             exact(row, body)
             if row['status'] != 'preview':
                 return json.loads(row['receipt']) if row['receipt'] else {'status': row['status'], 'automatic_retry': False}
-            if row['session_hash'] != session(request) or row['expires'] <= int(time.time()):
-                raise HTTPException(409, 'Preview expired or browser identity changed. Inspect and preview again.')
+            if row['session_hash'] != session(request):
+                conflict('preview_session_changed', 'The browser session changed after this preview was prepared.', 'Stay signed in as the owner, load metadata again and prepare a fresh preview. Other tabs signing in or changing identities also rotate the session.')
+            if row['expires'] <= int(time.time()):
+                conflict('preview_expired', 'This metadata preview has expired.', 'Load metadata again and prepare a new preview; previews last 30 minutes.')
             if not body.confirmed or not body.current_revision_confirmed:
-                raise HTTPException(409, 'Confirm the displayed before/after change and current/approved revision target.')
+                conflict('confirmation_missing', 'The update confirmations are incomplete.', 'Tick both the displayed change confirmation and the current/approved target confirmation before saving.')
             conn = connection(c, who, project, row['connection_id'])
             if conn['generation'] != row['generation']:
-                raise HTTPException(409, 'Connection changed; inspect again.')
-            if c.execute("SELECT 1 FROM redeye_metadata_updates WHERE connection_id=? AND artefact_id=? AND status IN ('attempting','needs_review')", (conn['id'], row['artefact_id'])).fetchone() or c.execute("SELECT 1 FROM redeye_import_tests WHERE connection_id=? AND artefact_id=? AND status IN ('attempting','needs_review')", (conn['id'], row['artefact_id'])).fetchone():
-                raise HTTPException(409, 'An earlier update on this target is unresolved. Inspect/recheck it before another update.')
+                conflict('connection_changed', 'The saved connection or credential changed after preview.', 'Load metadata again using the current saved connection and prepare a fresh preview.')
+            blockers = [{'id': r['id'], 'status': r['status'], 'source': source_name}
+                        for table, source_name in [('redeye_metadata_updates', 'metadata'), ('redeye_import_tests', 'earlier_pilot')]
+                        for r in c.execute(f"SELECT id,status FROM {table} WHERE connection_id=? AND artefact_id=? AND status IN ('attempting','needs_review')", (conn['id'], row['artefact_id']))]
+            if blockers:
+                conflict('earlier_update_unresolved', 'An earlier attempt on this artefact has an uncertain outcome.',
+                         'Use Recheck without writing in the history below. If it remains uncertain, inspect the original target in native RedEye and explicitly close it after manual review. Then prepare a fresh preview.', blockers)
             c.execute("UPDATE redeye_metadata_updates SET status='attempting' WHERE id=?", (ident,))
             audit(c, who, 'redeye_metadata.attempt_reserved', project, ident)
         # A durable per-preview reservation prevents replay, but successful updates do not lock the artefact forever.
@@ -398,3 +419,25 @@ def register_redeye_metadata(app, db, identity, permit, project_check, audit, va
                 raise HTTPException(409, 'Only an uncertain attempt can be closed manually.')
             old = json.loads(row['receipt']) if row['receipt'] else {}
             return save(c, who, project, row, 'reviewed', 'Closed after operator manual review. This is not API write verification; no retry or rollback was sent.', old.get('http_200_observed', False), False)
+
+    @app.post('/api/projects/{project}/redeye-metadata/legacy/{ident}/resolve')
+    def resolve_legacy(project: str, ident: str, body: Confirm, who=Depends(identity)):
+        permit(who, 'connection')
+        if not body.confirmed:
+            raise HTTPException(409, 'Confirm manual review of the original earlier-pilot target. This does not retry or verify its write.')
+        with db() as c:
+            c.execute('BEGIN IMMEDIATE')
+            project_check(c, who, project)
+            raw = c.execute('SELECT * FROM redeye_import_tests WHERE id=? AND tenant_id=? AND project_id=?', (ident, who['tenant_id'], project)).fetchone()
+            if not raw:
+                raise HTTPException(404, 'Earlier pilot unavailable in this project.')
+            row = dict(raw)
+            exact(row, body)
+            if row['status'] != 'needs_review':
+                raise HTTPException(409, 'First recheck an interrupted attempt without writing. Only an uncertain outcome can be closed manually.')
+            old = json.loads(row['receipt']) if row['receipt'] else {}
+            receipt = {**old, 'status': 'reviewed', 'read_back_verified': False, 'reason': 'Earlier pilot closed after operator manual review. No API write verification, retry or rollback is claimed.',
+                       'observed': now(), 'automatic_retry': False, 'initial_outcome': old.get('initial_outcome', {'status': row['status'], 'reason': old.get('reason', 'Earlier uncertain attempt'), 'http_200_observed': old.get('http_200_observed', False)})}
+            c.execute('UPDATE redeye_import_tests SET status=?,receipt=? WHERE id=?', ('reviewed', canonical(receipt), ident))
+            audit(c, who, 'redeye_metadata.legacy_manually_reviewed', project, ident)
+            return receipt

@@ -6,7 +6,14 @@ const base=process.env.ORBIT_TEST_URL||'http://127.0.0.1:8003';
 const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 async function load(){await page.getByRole('button',{name:'Load metadata fields',exact:true}).click();await page.getByText('Metadata loaded. No write sent.',{exact:true}).waitFor();}
-async function save(){await page.getByRole('button',{name:'Preview metadata update',exact:true}).click();await page.getByText('Before/after preview ready. No write sent.',{exact:true}).waitFor();const button=page.getByRole('button',{name:'Confirm and save to RedEye',exact:true});assert.equal(await button.isDisabled(),true);await page.getByLabel('Confirm metadata change',{exact:true}).check();await page.getByLabel('Confirm metadata revision',{exact:true}).check();await button.click();await page.getByText('Selected field and all preserved metadata matched.',{exact:true}).waitFor();}
+let errorChecked=false;
+async function save(){await page.getByRole('button',{name:'Preview metadata update',exact:true}).click();await page.getByText('Before/after preview ready. No write sent.',{exact:true}).waitFor();const button=page.getByRole('button',{name:'Confirm and save to RedEye',exact:true});assert.equal(await button.isDisabled(),true);await page.getByLabel('Confirm metadata change',{exact:true}).check();await page.getByLabel('Confirm metadata revision',{exact:true}).check();
+if(!errorChecked){
+ await page.route('**/redeye-metadata/*/execute',route=>route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({detail:{code:'preview_session_changed',message:'The browser session changed after this preview was prepared.',next_action:'Load metadata again and prepare a fresh preview.',write_sent_by_this_request:false}})}),{times:1});
+ await button.click();await page.getByRole('alert').getByText(/preview_session_changed/).waitFor();
+ await page.getByText(/Save was not completed:.*preview_session_changed/).waitFor();errorChecked=true;
+}
+await button.click();await page.getByText('Selected field and all preserved metadata matched.',{exact:true}).waitFor();}
 try{
  await page.goto(base);await page.getByLabel('Choose a synthetic identity').selectOption('north-owner');await page.getByRole('button',{name:'Enter workspace'}).click();
  await page.getByRole('button',{name:'RedEye metadata',exact:true}).click();

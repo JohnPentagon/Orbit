@@ -84,6 +84,13 @@ General Parameter imports behaviour: Apply local parameter import writes only to
 
 General import destinations remain blocked; the separate v0.9 RedEye page provides the restricted pilot described below. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
 
+## Save-conflict diagnostics — version 0.11.1
+
+- [ ] Update/restart once and record the specific banner or `ORBIT RedEye save blocked [code]` reason for the customer's 409. The access-log status alone does not establish the cause.
+- [ ] Confirm the error is visible beside the save button, with an actionable next step; verify no API key or metadata values appear in the diagnostic log.
+- [ ] If an earlier pilot blocks the target, inspect native RedEye, recheck without writing, then explicitly close after manual review only if appropriate. Preserve the original outcome and distinguish manual review from verified API success.
+- [ ] Prepare a fresh preview and record the actual live update/read-back result. No customer result is marked passed by the agent.
+
 ## Selected-field RedEye metadata — version 0.11
 
 - [ ] Update/restart Run-ORBIT.cmd on Windows. Confirm RedEye metadata opens and reuses the saved working connection without terminal testing prompts.
