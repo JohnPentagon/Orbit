@@ -99,3 +99,7 @@ Version 0.8 adds **Additional connections** for Procore, Meridian Explorer and a
 ## RedEye metadata verification and updates
 
 Version 0.11 adds **RedEye metadata**. Select any existing field on a chosen artefact. Use **Verify only**, with an optional expected value, or **Update value** with explicit replacement of populated values. bSDD is optional. Review the before/after preview, confirm the target revision and save; no role switching or per-test enabling is required. A successful update allows another fresh edit on the same artefact. This makes real metadata writes when confirmed, never creates keys and never automatically retries. See [the metadata guide](docs/REDEYE_METADATA.md) and record actual results in the checklist. Windows launcher execution remains pending.
+
+## Microsoft SQL Server / Azure SQL
+
+Version 0.12 adds **SQL connections**. Install Microsoft's ODBC Driver 18 and run **Setup-ORBIT-SQL.cmd** once, then restart Run-ORBIT.cmd. Configure server/port/database and SQL login or local Windows identity in the browser; SQL passwords use the encrypted credential form. Browse tables/views, inspect column metadata and sampled rows, then configure/save source-to-destination mappings. These are read/mapping previews, not database/platform transfers. See [SQL_CONNECTIONS.md](docs/SQL_CONNECTIONS.md) for certificate, Azure firewall/private access and sample limitations. Actual SQL connectivity and this optional Windows setup still need local acceptance testing.

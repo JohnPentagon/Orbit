@@ -8,6 +8,7 @@ Completed entries below are user-reported, not independently reproduced. They do
 
 ## User-reported baseline
 
+- [x] Owner reported a successful RedEye metadata write on 10 November 2026: “The Write worked, let's count that as a first pass.” This is a first customer-reported write pass, not independently reproduced or proof of all field types/revisions/permissions.
 - [x] RedEye connection confirmed by the owner.
 - [x] RedEye Read artefacts succeeded.
 - [x] RedEye Read groups succeeded.
@@ -83,6 +84,18 @@ Current Meridian support: saved preparation records, an offline Explorer preview
 General Parameter imports behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
 
 General import destinations remain blocked; the separate v0.9 RedEye page provides the restricted pilot described below. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+
+## Microsoft SQL Server / Azure SQL — version 0.12
+
+- [ ] Install optional Python SQL support and Microsoft ODBC Driver 18 on the ORBIT executor. Confirm the portal reports both available.
+- [ ] Configure one authorised TCP server/port/database profile; SQL login password goes in the encrypted browser form. For local integrated authentication, confirm the Windows process identity and SELECT-only grants.
+- [ ] Prove TLS certificate/hostname trust and network/firewall/private-endpoint reachability without disabling verification.
+- [ ] Connect and compare the visible table/view list, column names/types/nullability and PK markers with SQL Server Management Studio/Azure tooling.
+- [ ] Inspect the bounded sample; verify NULLs, dates, exact decimals/large integers, binary omission and long-value truncation. Confirm it is not complete-table coverage.
+- [ ] Load destination RedEye keys or destination SQL columns; configure source matching column and destination match field, transformations/defaults/required values.
+- [ ] Preview mapping, review duplicate/missing source keys, save per project/connection and reload/revise it. Check stale snapshots, changed credentials and another project's access boundaries.
+- [ ] Confirm mapping previews/JSON exports execute no database or platform writes and do not establish actual destination matches.
+- [ ] Record the installed SQL Server/Azure SQL edition, authentication and actual connection result. SQL transfer execution, Entra/MFA/managed identity and reverse platform-to-SQL data flows remain additional work.
 
 ## Save-conflict diagnostics — version 0.11.1
 

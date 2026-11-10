@@ -1,0 +1,2 @@
+# Optional SQL Server / Azure SQL support. Requires Microsoft's ODBC Driver 18 separately.
+pyodbc==5.3.0

@@ -1,3 +1,5 @@
+**SQL connections (v0.12):** Microsoft SQL Server/Azure SQL table and column browsing, bounded samples, and saved project/connection mapping previews are now available. Install the optional SQL support/ODBC driver once, then use the portal. [SQL setup and scope](docs/SQL_CONNECTIONS.md). RedEye's first customer-reported write pass is recorded in the testing checklist.
+
 **Local UAT (v0.11):** double-click `Run-ORBIT.cmd`, then open **RedEye metadata**. Select any existing field, verify its current/expected value or preview and confirm an update—including replacing populated values. bSDD is optional. No role switching, per-test enabling or terminal target entry. [Metadata guide](docs/REDEYE_METADATA.md).
 
 # ORBIT

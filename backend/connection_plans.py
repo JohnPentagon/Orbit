@@ -70,8 +70,8 @@ CATALOGUE = {
         "sources": [{"label": "ACC API introduction", "url": "https://aps.autodesk.com/en/docs/acc/v1/overview/introduction/"}],
     },
     "redeye": {
-        "name": "RedEye DMS", "stage": "Bounded read adapter — initial reads reported successful",
-        "summary": "Artefact, group and metadata-key reads were reported successful by the owner. Record that evidence against the applicable local connection; new plans start untested.",
+        "name": "RedEye DMS", "stage": "Metadata reader/editor — first write reported successful",
+        "summary": "Artefact, group and metadata-key reads and a first selected-field write were reported successful by the owner. Record that evidence against the applicable local connection; new plans start untested.",
         "interfaces": ["RedEye DMS API"],
         "checks": [("artefacts", "Read artefacts succeeds against the intended environment"), ("groups", "Read groups succeeds"), ("metadata_keys", "Read metadata keys succeeds"), ("group_filter", "Prove group filtering excludes unrelated artefacts; listing groups alone does not prove isolation"), *COMMON_CHECKS],
         "sources": [{"label": "Official API documentation", "url": "https://api.redeyedms.com/#redeye-dms-api"}],

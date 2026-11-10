@@ -45,7 +45,7 @@ Implemented versioned GET endpoints:
 - `/api/Dictionary/v1/Classes` with dictionary `Uri`, `Offset`, `Limit`.
 - `/api/Class/v1` with class `Uri` and `IncludeClassProperties=true`.
 
-Headers: `Accept: application/json` and `User-Agent: ORBIT/0.11.1`. No API key, bearer token or cookie is sent by this adapter. These public operations succeeded anonymously. Private/secured dictionaries and GraphQL authentication are separate capabilities and are not implemented.
+Headers: `Accept: application/json` and `User-Agent: ORBIT/0.12.0`. No API key, bearer token or cookie is sent by this adapter. These public operations succeeded anonymously. Private/secured dictionaries and GraphQL authentication are separate capabilities and are not implemented.
 
 The identifier URL is validated as a canonical versioned buildingSMART identifier and sent as a query parameter to the fixed API. It is **never fetched directly**. Arbitrary hosts, HTTP, credentials, ports, query strings, fragments and traversal-like identifiers are rejected. Outbound requests keep TLS verification, use the configured proxy, refuse redirects, time out, and cap decoded response bytes at 2 MB. Network/contract/rate-limit errors leave the existing saved settings unchanged. This public reference adapter does not use the customer-connector live-read opt-in or send vendor project data to bSDD.
 

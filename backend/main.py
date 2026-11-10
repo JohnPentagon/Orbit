@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ROLES = {"owner": {"view", "run", "connection", "draft", "administer"}, "engineer": {"view", "run", "draft"}, "approver": {"view", "approve"}, "viewer": {"view"}, "auditor": {"view", "audit"}}
 PROVIDERS = [
     {"id": key, "name": name, "maturity": "Synthetic only", "live_reads": False, "live_writes": False}
-    for key, name in [("forma", "Autodesk Forma / ACC Docs"), ("redeye", "Accruent RedEye"), ("procore", "Procore"), ("meridian", "Accruent Meridian"), ("maintenance", "Maintenance Connection"), ("revit", "Revit 2024+"), ("navisworks", "Navisworks 2024+"), ("generic", "Custom REST / files")]
+    for key, name in [("forma", "Autodesk Forma / ACC Docs"), ("redeye", "Accruent RedEye"), ("procore", "Procore"), ("meridian", "Accruent Meridian"), ("maintenance", "Maintenance Connection"), ("revit", "Revit 2024+"), ("navisworks", "Navisworks 2024+"), ("generic", "Custom REST / files"), ("sql", "Microsoft SQL Server / Azure SQL")]
 ]
 
 # Catalogue describes implemented adapters, never a customer's verified access.
@@ -35,6 +35,7 @@ for provider in PROVIDERS:
         'meridian': 'Explorer reader; Windows and customer validation pending',
         'maintenance': 'Configured REST reader; administrator contract required',
         'generic': 'Configured REST reader; administrator contract required',
+        'sql': 'Table/schema reader and saved mapping previews; customer SQL validation pending',
         'revit': 'Preparation only; desktop add-in not implemented',
         'navisworks': 'Preparation only; desktop bridge not implemented',
     }[provider['id']]
@@ -116,7 +117,7 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.11.1")
+    app = FastAPI(title="ORBIT foundation", version="0.12.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -318,6 +319,8 @@ def create_app(db_path=None, demo=None):
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections
     register_read_connections(app, db, identity, permit, project_check, audit, vault, now)
+    from backend.sql_connections import register_sql_connections
+    register_sql_connections(app, db, identity, permit, project_check, audit, vault, now)
     from backend.redeye_metadata import register_redeye_metadata
     register_redeye_metadata(app, db, identity, permit, project_check, audit, vault, now)
     from backend.redeye_pilot import register_redeye_pilot

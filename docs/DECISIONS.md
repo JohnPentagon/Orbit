@@ -61,3 +61,7 @@ The user requested less restrictive selection and direct verification/update of 
 ### 10 November 2026 — actionable save conflicts
 
 The customer reported only an execute 409 access-log entry, so its actual cause cannot be inferred. Add fixed safe conflict reasons/actions to the response and log; show the message beside the preview and scroll the banner into view. Split session rotation from expiry. Earlier pilot uncertainties need an explicit native-manual-review closure path, with receipt/audit/attempt history retained and no retry or success claim, so old records do not permanently block the new editor.
+
+### 10 November 2026 — first RedEye write pass and Microsoft SQL connectivity
+
+Owner reported the RedEye write worked and requested it count as a first pass; record that as user-reported acceptance without extending it to every type, revision or permission. Owner confirmed Microsoft SQL Server/Azure SQL as the new database family. Add optional pyodbc/ODBC 18 reads, explicit TCP profiles, encrypted SQL passwords/local Windows identity, verified TLS, generated SELECT-only metadata and bounded samples. Save project/connection-scoped SQL-to-destination mapping previews with native RedEye/SQL field inventories and explicit source/destination matching references. Real destination matching, SQL/platform writes, reverse imports and Entra/managed identity await separate implementation and validation.
