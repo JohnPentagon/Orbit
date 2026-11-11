@@ -67,9 +67,10 @@ def compare_documents(records):
         findings.append({"number": number.upper(), "title": (left or right)[0]["title"], "state": state, "reason": reason, "forma": left, "redeye": right})
     return {"synthetic": True, "coverage": "Complete for the seeded synthetic register only", "findings": findings}
 
-def create_app(db_path=None, demo=None):
+def create_app(db_path=None, demo=None, local=None):
     demo = os.getenv("ORBIT_DEMO_MODE") == "1" if demo is None else demo
-    if not demo:
+    local = os.getenv("ORBIT_LOCAL_WORKSPACE") == "1" if local is None else local
+    if not demo and not local:
         raise RuntimeError("Production startup blocked: configure production OIDC and deployment controls before disabling demo mode.")
     path = Path(db_path or ROOT / ".local/orbit.db")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,7 +95,7 @@ def create_app(db_path=None, demo=None):
             if not c.execute("SELECT 1 FROM schema_migrations WHERE version=?", (migration.name,)).fetchone():
                 version = migration.name.replace("'", "''")
                 c.executescript("BEGIN IMMEDIATE;\n" + migration.read_text() + f"\nINSERT INTO schema_migrations VALUES('{version}');\nCOMMIT;")
-        if not c.execute("SELECT 1 FROM tenants").fetchone():
+        if not local and not c.execute("SELECT 1 FROM tenants").fetchone():
             for tenant, name, project in [("north", "Northstar Construction", "harbour"), ("south", "Southbank Estates", "riverside")]:
                 c.execute("INSERT INTO tenants VALUES(?,?)", (tenant, name))
                 c.execute("INSERT INTO projects VALUES(?,?,?)", (project, tenant, "Harbour Exchange" if tenant == "north" else "Riverside Campus"))
@@ -117,7 +118,8 @@ def create_app(db_path=None, demo=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.12.0")
+    app = FastAPI(title="ORBIT foundation", version="0.13.0")
+    app.state.local_workspace = local
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
     @app.exception_handler(RequestValidationError)
@@ -126,6 +128,8 @@ def create_app(db_path=None, demo=None):
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
+        if local and request.url.path.startswith("/api/") and (not request.client or request.client.host not in {"127.0.0.1", "::1", "testclient"}):
+            return JSONResponse({"detail": "This local workspace is restricted to the computer running ORBIT."}, status_code=403)
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             origin = request.headers.get("origin")
             if origin and origin != str(request.base_url).rstrip("/"):
@@ -139,8 +143,8 @@ def create_app(db_path=None, demo=None):
         token = request.cookies.get("orbit_session", "")
         with db() as c:
             row = c.execute("SELECT s.user_id,s.tenant_id,m.role FROM sessions s JOIN memberships m ON m.tenant_id=s.tenant_id AND m.user_id=s.user_id WHERE token_hash=? AND expires>?", (hashlib.sha256(token.encode()).hexdigest(), int(time.time()))).fetchone()
-        if not row:
-            raise HTTPException(401, "Sign in to a synthetic test identity")
+        if not row or local and row["role"] != "owner":
+            raise HTTPException(401, "Open your local workspace" if local else "Sign in to a synthetic test identity")
         return dict(row)
 
     def permit(who, action):
@@ -156,10 +160,11 @@ def create_app(db_path=None, demo=None):
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "mode": "synthetic-development", "live_connectors": False, "server_version": app.version}
+        return {"status": "ok", "mode": "local-workspace" if local else "synthetic-development", "live_connectors": False, "server_version": app.version}
 
     @app.get("/api/demo/identities")
     def identities():
+        if local:raise HTTPException(404, "Test identities are unavailable in local workspace mode.")
         with db() as c:
             return [dict(r) for r in c.execute("SELECT m.user_id,m.tenant_id,m.role,t.name FROM memberships m JOIN tenants t ON t.id=m.tenant_id")]
 
@@ -168,6 +173,7 @@ def create_app(db_path=None, demo=None):
 
     @app.post("/api/demo/session")
     def login(body: Login, response: Response, request: Request):
+        if local:raise HTTPException(404, "Test sign-in is unavailable in local workspace mode.")
         with db() as c:
             row = c.execute("SELECT * FROM memberships WHERE user_id=?", (body.user_id,)).fetchone()
             if not row:
@@ -191,9 +197,10 @@ def create_app(db_path=None, demo=None):
         permit(who, "view")
         with db() as c:
             projects = [dict(r) for r in c.execute("SELECT p.* FROM projects p JOIN project_access a ON a.project_id=p.id AND a.tenant_id=p.tenant_id WHERE a.tenant_id=? AND a.user_id=?", (who["tenant_id"], who["user_id"]))]
-            connections = [dict(r) for r in c.execute("SELECT c.id,c.project_id,c.provider,c.name,c.status,(c.secret_ciphertext IS NOT NULL) AS credential_present FROM connections c JOIN project_access a ON a.tenant_id=c.tenant_id AND a.project_id=c.project_id WHERE a.tenant_id=? AND a.user_id=?", (who["tenant_id"], who["user_id"]))]
+            connections = [] if local else [dict(r) for r in c.execute("SELECT c.id,c.project_id,c.provider,c.name,c.status,(c.secret_ciphertext IS NOT NULL) AS credential_present FROM connections c JOIN project_access a ON a.tenant_id=c.tenant_id AND a.project_id=c.project_id WHERE a.tenant_id=? AND a.user_id=?", (who["tenant_id"], who["user_id"]))]
             tenant = dict(c.execute("SELECT * FROM tenants WHERE id=?", (who["tenant_id"],)).fetchone())
-        return {"identity": who, "permissions": sorted(ROLES[who["role"]]), "tenant": tenant, "projects": projects, "connections": connections, "providers": PROVIDERS, "synthetic": True}
+            operator_name = c.execute("SELECT name FROM users WHERE id=?", (who["user_id"],)).fetchone()[0]
+        return {"operator_name": operator_name, "local_mode": local, "identity": who, "permissions": sorted(ROLES[who["role"]]), "tenant": tenant, "projects": projects, "connections": connections, "providers": PROVIDERS, "synthetic": not local}
 
     @app.get("/api/admin/members")
     def members(who=Depends(identity)):
@@ -315,6 +322,8 @@ def create_app(db_path=None, demo=None):
             audit(c, who, "mapping.approved", project, row["digest"])
         return {"status": "approved", "executed": False, "message": "Recorded design approval only; no mapping or vendor write executed"}
 
+    from backend.local_workspace import register_local_workspace
+    register_local_workspace(app, db, identity, permit, project_check, audit, now, local)
     from backend.integrations import register_integrations
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections

@@ -1,6 +1,6 @@
 # ORBIT tester checklist
 
-Updated 10 November 2026. Keep this list for later; no testing is needed immediately.
+Updated 11 November 2026. Keep this list for local connector acceptance and the later deployment cutover.
 
 The portal's **Connection preparation** page saves a checklist per project and intended connection, with Passed / Failed / Blocked / Not applicable / Untested and a non-secret evidence note. Owners edit; other project roles view. Export checklist downloads a JSON copy through your browser. Records are stored in your local `.local/orbit.db`; back up the database and its matching vault key securely before replacing a local installation. Never commit or share that folder.
 
@@ -84,6 +84,17 @@ Current Meridian support: saved preparation records, an offline Explorer preview
 General Parameter imports behaviour: Apply local parameter import writes only to the selected synthetic connection register. It does not write to the real platform represented by that connection. Each real connector needs its own implemented and verified writer before the vendor-side checks above can pass.
 
 General import destinations remain blocked; the separate v0.9 RedEye page provides the restricted pilot described below. Downloaded packages are ORBIT review records, not vendor-native import files. No test is marked passed merely because a review package can be downloaded.
+
+## Connection-first local workspace — version 0.13
+
+- [ ] Update/restart Run-ORBIT.cmd on Windows. Open the existing workspace and verify actual connection names/credentials remain usable; do not delete the database/vault pair.
+- [ ] On a fresh test installation, create your workspace/project and confirm no sample organisations/documents/connections or synthetic role picker appear.
+- [ ] Verify the five navigation areas and one platform-specific setup/data workspace per connector on desktop and mobile.
+- [ ] Recheck the already working RedEye connection and a permitted field update through Connections → RedEye → Documents & metadata. Preserve the earlier first-pass evidence; this UI regression is a separate pending customer check.
+- [ ] Test Autodesk sign-in/resource selectors, SQL table/sample/mapping and each other intended live connector using approved access. Automated fixtures do not replace these customer tests.
+- [ ] Add/rename a project, switch projects and reload. Confirm counts and stored mappings remain correctly scoped and reflect actual recorded data.
+- [ ] Inspect Activity and error/recovery visibility, including expired sessions and earlier uncertain write receipts.
+- [ ] Complete ASP.NET Core 10/Entra/persistence/secret migration and local parity tests before planning Azure deployment. This UI release has not deployed anything.
 
 ## Microsoft SQL Server / Azure SQL — version 0.12
 

@@ -1,3 +1,5 @@
+> In v0.13, open Connections → Autodesk or RedEye. The normal Run-ORBIT.cmd opens a local workspace without a tester-role picker; the older read-test launcher is an advanced test-mode alternative.
+
 # Version 0.4 — easier Autodesk and RedEye setup
 
 6 November 2026. This update implements local APS consent/app-only auth, explicit renewal, and authorised named hub/project/top-level-folder selectors. Vendor calls are mocked in tests; no real account or live token exchange was verified during development. Read-only discovery remains separate from synthetic comparison/mapping/handover records. No file transfer or provider business-data write is enabled.

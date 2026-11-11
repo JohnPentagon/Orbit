@@ -278,7 +278,9 @@ def register_additional_connections(app, db, identity, permit, project_check, au
         if os.getenv('ORBIT_ENABLE_LIVE_READS') != '1':issues.append('Live metadata reads are not enabled in this server process.')
         _, origin = approved_url(cfg['base_url'])
         allowed = {v.strip().rstrip('/') for v in os.getenv('ORBIT_EXTRA_ALLOWED_ORIGINS', '').split(',') if v.strip()}
-        if origin not in allowed:issues.append('Operator must allow this exact HTTPS origin (including any non-default port) in ORBIT_EXTRA_ALLOWED_ORIGINS.')
+        local_approved = getattr(app.state, 'local_workspace', False) and cfg['vendor_settings_confirmed'] and cfg['approved_test_access'] and bool(cfg['evidence_note'].strip())
+        if origin not in allowed and not local_approved:
+            issues.append('Confirm this profile’s vendor endpoint and authorised access to approve its exact HTTPS origin.' if getattr(app.state, 'local_workspace', False) else 'Operator must allow this exact HTTPS origin (including any non-default port) in ORBIT_EXTRA_ALLOWED_ORIGINS.')
         if not cfg['vendor_settings_confirmed'] or not cfg['approved_test_access'] or not cfg['evidence_note'].strip():issues.append('Confirm vendor settings, authorised test access and a non-secret administrator reference.')
         if cfg['provider'] == 'meridian' and (not cfg['view_id'].strip() or not cfg['filter_name'].strip()):issues.append('Meridian Explorer requires a documented view ID and internal filter name.')
         if cfg['auth_mode'] == 'windows_integrated':

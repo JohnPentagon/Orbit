@@ -1,3 +1,5 @@
+> In v0.13, open Connections → RedEye → Documents & metadata. Setup and encrypted credentials are in the Connection tab of that same workspace; there is no separate sidebar test page.
+
 # RedEye metadata verification and editing
 
 Version 0.11, 10 November 2026. This replaces the restrictive one-value pilot in the portal navigation. The user requested arbitrary existing-field selection, verification and updates. No customer write was performed during implementation.

@@ -1,3 +1,9 @@
+## Current local workspace — v0.13
+
+Double-click **Run-ORBIT.cmd** after updating/restarting once. A new installation asks for your workspace/project names and starts empty; an existing installation opens its saved workspace. Use **Connections** for all platform setup and data tools. **Mappings**, **Activity** and **Settings** provide the remaining workspace functions. There is no tester-role selector in the normal application. Preserve `.local/orbit.db` and `.local/vault.key` together when updating. [Current workspace guide](docs/LOCAL_WORKSPACE.md).
+
+The older version-specific instructions below describe previous layouts. Current RedEye metadata tools are under Connections → RedEye → Documents & metadata; SQL is under Connections → SQL Server/Azure SQL. Legacy test launchers are not needed for normal use.
+
 ## Start the local UAT portal — version 0.11
 
 Double-click **Run-ORBIT.cmd**. It opens http://127.0.0.1:8000 and requires no terminal testing choices. Keep that one server window open. Set up credentials in **Read connections**, select bSDD definitions in the portal, and use **RedEye metadata** for select → verify, or preview → confirm update → read-back. Connection identifiers and hostnames are taken from the saved profile automatically. See [the UAT guide](docs/REDEYE_METADATA.md).

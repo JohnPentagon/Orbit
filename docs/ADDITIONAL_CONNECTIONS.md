@@ -1,3 +1,5 @@
+> In v0.13, open Connections and choose the platform directly. In local-workspace mode, confirmed authorised profile settings approve that exact HTTPS origin without terminal entry. Legacy/test mode still requires its process allowlist.
+
 # Additional connections and real-import preparation
 
 Version 0.8, 7 November 2026. This adds executable bounded metadata readers and real-destination preparation. **It does not enable remote parameter writes.**

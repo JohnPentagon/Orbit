@@ -1,3 +1,5 @@
+> In v0.13, open Connections → SQL Server / Azure SQL. All SQL setup, browsing and mapping tools are in that workspace; saved previews are indexed under Mappings.
+
 # Microsoft SQL Server / Azure SQL connections
 
 Version 0.12, 10 November 2026. This increment connects to Microsoft SQL Server and Azure SQL Database through optional pyodbc and Microsoft ODBC Driver 18. It browses visible tables/views, reads column metadata and bounded samples, and saves mappings from SQL columns to another saved project connection. No SQL or destination-platform writer is exposed by this feature.

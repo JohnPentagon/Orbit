@@ -1,3 +1,5 @@
+**Local workspace (v0.13):** one connection hub, five navigation areas and a dark/orange interface. Fresh workspaces start empty; the normal launcher no longer opens a synthetic-role dashboard. Existing real connection setup and credentials are preserved. [Start here](docs/LOCAL_WORKSPACE.md) · [Interface preview](docs/images/connection-hub.png). The backend remains Python until the agreed [.NET/Entra migration](docs/DOTNET_MIGRATION.md).
+
 **SQL connections (v0.12):** Microsoft SQL Server/Azure SQL table and column browsing, bounded samples, and saved project/connection mapping previews are now available. Install the optional SQL support/ODBC driver once, then use the portal. [SQL setup and scope](docs/SQL_CONNECTIONS.md). RedEye's first customer-reported write pass is recorded in the testing checklist.
 
 **Local UAT (v0.11):** double-click `Run-ORBIT.cmd`, then open **RedEye metadata**. Select any existing field, verify its current/expected value or preview and confirm an update—including replacing populated values. bSDD is optional. No role switching, per-test enabling or terminal target entry. [Metadata guide](docs/REDEYE_METADATA.md).

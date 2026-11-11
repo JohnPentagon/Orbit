@@ -1,8 +1,10 @@
 # ORBIT foundation status
 
-10 November 2026. Bounded implementation authorised; real vendor validation and cloud deployment remain pending.
+11 November 2026. Bounded implementation authorised; real vendor validation and cloud deployment remain pending.
 
 ## Implemented
+
+Version 0.13: connection-first local workspace with empty bootstrap, no normal synthetic-role/dashboard experience, five navigation areas, one provider-scoped connection hub, recorded-data summaries, saved mapping index, connector activity and project/workspace settings. A dark theme uses orange active states, framing and focus. Existing real credentials/configuration and old audit records are preserved; legacy fixtures remain separate. Local APIs require loopback peers, local sessions are explicit/stable and sample data is not seeded on local startup. Backend remains Python; .NET 10/Entra migration and hosted deployment are not completed. See LOCAL_WORKSPACE.md and DOTNET_MIGRATION.md.
 
 Version 0.12: Microsoft SQL Server/Azure SQL TCP profiles, encrypted SQL passwords or local Windows integrated authentication, optional ODBC 18 prerequisite checks, generated SELECT-only table/view/column discovery and bounded typed row samples. Project snapshots and destination field inventories feed per-project/connection mappings with match-field selection, transformations/defaults/required checks, sample duplicate/missing-key findings and optimistic mapping revisions. RedEye keys and SQL destination columns can be inventoried; other API targets use explicitly unverified manual field references. Mapping previews/JSON exports make no destination matches or writes. No actual SQL customer connection was tested by the agent. See SQL_CONNECTIONS.md.
 
@@ -41,6 +43,8 @@ New increment: exact project/connection integration profiles; multi-field mappin
 React/TypeScript portal and FastAPI backend; persistent, clearly labelled synthetic Forma/RedEye document comparison; tenant/project permissions; five synthetic roles per organisation; owner management of existing synthetic memberships/project grants; connection catalogue; encrypted local development credentials; audited comparison and approval activity; mapping previews and separate-person digest-bound approval records; SQL migration tracking; responsive desktop/mobile layouts.
 
 ## Validation
+
+Version 0.13: **395 backend tests passed**, including empty local bootstrap, loopback-only API/session access, disabled tester identity routes, stable cookies, settings/project isolation, real-credential preservation across legacy-to-local startup and profile-scoped local HTTPS approval. Final targeted local-workspace checks also passed. TypeScript/production build passed. Chromium passed empty onboarding, five navigation areas, provider-scoped setup, simulated RedEye read/verify/write, SQL mapping/index, activity, settings, project isolation, reload, desktop/mobile widths and explicit session close/reopen with project persistence. No JavaScript errors, real customer calls, Windows launcher run, .NET SDK/host validation or Azure deployment were performed. Screenshots come from an isolated test workspace; the normal application does not seed those names/data.
 
 Version 0.12: **381 backend tests passed**. New coverage includes SQL profile validation, encrypted credential redaction/invalidation, exact ODBC option escaping/TLS settings, parameterised catalog lookups and quoted identifiers, bounded LOB projections, precise scalar representations, safe SQL errors, post-read role/generation checks, prepared project samples/catalogues, current source/destination inventory checks, duplicate/missing sampled keys and optimistic mapping updates. TypeScript/production build passed. Chromium passed encrypted password setup, simulated table/column/row discovery, RedEye key inventory, transforms/defaults, mapping save/revision/reload, engineer prepared-data workflows and viewer/mobile boundaries. No real SQL server, ODBC/native driver handshake, Windows helper or SQL/vendor transfer was tested; customer first-live SQL checks remain pending.
 
