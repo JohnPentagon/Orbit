@@ -118,7 +118,7 @@ def create_app(db_path=None, demo=None, local=None):
         with os.fdopen(fd, "wb") as file:
             file.write(Fernet.generate_key())
     vault = Fernet(key_path.read_bytes())
-    app = FastAPI(title="ORBIT foundation", version="0.13.1")
+    app = FastAPI(title="ORBIT foundation", version="0.14.0")
     app.state.local_workspace = local
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
 
@@ -324,6 +324,8 @@ def create_app(db_path=None, demo=None, local=None):
 
     from backend.local_workspace import register_local_workspace
     register_local_workspace(app, db, identity, permit, project_check, audit, now, local)
+    from backend.connection_analysis import register_connection_analysis
+    register_connection_analysis(app, db, identity, permit, project_check, audit, vault, now)
     from backend.integrations import register_integrations
     register_integrations(app, db, identity, permit, project_check, audit, now)
     from backend.read_connections import register_read_connections

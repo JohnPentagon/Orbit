@@ -140,7 +140,8 @@ def read_resources(cfg, secret, operation, page=1, transport=None):
         if cfg['property_names']:params['pn'] = '|'.join(cfg['property_names'])
         payload = read_json(base + '/api/GetDocuments.ashx', params, cfg, secret, transport)
         parsed = explorer_documents(payload)
-        return {**parsed, 'resources': [{'id': r['document_id'], 'label': r['name'], 'kind': 'document', 'version_id': r['version_id'], 'revision': r['revision']} for r in parsed['resources']], 'operation': operation, 'synthetic': False, 'coverage': 'First bounded Explorer response; repository freshness and paging semantics are not established.'}
+        from backend.record_data import fields
+        return {**parsed, 'resources': [{'id': r['document_id'], 'label': r['name'], 'kind': 'document', 'version_id': r['version_id'], 'revision': r['revision'], 'fields': fields({**{k:v for k,v in r.items() if k!='properties'},'properties':{p['name']:p['value'] for p in r['properties']}},secret)} for r in parsed['resources']], 'operation': operation, 'synthetic': False, 'coverage': 'First bounded Explorer response; repository freshness and paging semantics are not established.'}
     else:
         if operation != 'resources':raise ProviderError('unsupported_operation', 'This configured REST connection supports resources only.')
         payload = read_json(base + cfg['collection_path'], cfg['scope_parameters'], cfg, secret, transport)
@@ -166,6 +167,9 @@ def read_resources(cfg, secret, operation, page=1, transport=None):
         if provider == 'procore' and operation == 'field_definitions':
             if not isinstance(row.get('data_type'), str):raise ProviderError('contract_mismatch', 'Field definition data type is missing.')
             resource['field_type'] = safe(row['data_type'], 100)
+        from backend.record_data import fields
+        resource['fields']=fields(row,secret)
+        if cfg['auth_mode']=='basic' and ':' in secret:resource['fields']=fields(resource['fields'],secret.split(':',1)[1])
         resources.append(resource)
     return {'operation': operation, 'synthetic': False, 'resources': resources, 'returned': len(resources), 'coverage': 'At most 25 resources displayed; this is not a complete register.', 'imported': 0, 'files_transferred': 0, 'page': page if provider == 'procore' else None}
 
@@ -409,3 +413,5 @@ def register_additional_connections(app, db, identity, permit, project_check, au
             c.execute('UPDATE external_connections SET configuration=?,generation=generation+1,last_result=NULL WHERE id=?', (json.dumps(cfg), ident));c.execute('DELETE FROM external_discovery WHERE connection_id=?', (ident,))
             audit(c, who, 'additional_connection.scope_selected', project, ident)
         return {'generation': body.expected_generation+1, 'credential_preserved': True, 'bindings_cleared': True}
+
+    app.state.additional_read = read

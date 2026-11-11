@@ -214,3 +214,5 @@ def register_read_connections(app, db, identity, permit, project_check, audit, v
             c.execute("UPDATE read_connections SET last_result=? WHERE id=?", (json.dumps(summary), connection))
             audit(c, who, "read_connection.read_completed", project, f"{connection}: {body.operation}, {result['returned']} resources; no import")
         return result
+
+    app.state.profile_read = read

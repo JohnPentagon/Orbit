@@ -1,3 +1,5 @@
+**Connection comparisons (v0.14.0):** Mappings supports any two configured connections, explicit matching keys and field rules, read-only sampled reports, optional bSDD validation, and timestamped health/data-validation panels on Overview. Customer checks: [testing checklist](docs/TESTER_CHECKLIST.md).
+
 **Brand update (v0.13.1):** the supplied ORBIT / Pentagon Solutions Constellation identity is applied: navy, cyan, amber, paper and teal; constellation logo; company attribution; headline and tagline. [Brand application](docs/BRANDING.md) · [Interface preview](docs/images/connection-hub.png).
 
 **Local workspace (v0.13):** one connection hub, five navigation areas and a dark/orange interface. Fresh workspaces start empty; the normal launcher no longer opens a synthetic-role dashboard. Existing real connection setup and credentials are preserved. [Start here](docs/LOCAL_WORKSPACE.md) · [Interface preview](docs/images/connection-hub.png). The backend remains Python until the agreed [.NET/Entra migration](docs/DOTNET_MIGRATION.md).

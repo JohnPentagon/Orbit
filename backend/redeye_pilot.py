@@ -30,7 +30,7 @@ def positive(value):
 
 def request_vendor(base, secret, cfg, method, path, payload=None, transport=None):
     headers = auth_headers('redeye', secret, cfg['auth_header'], cfg['auth_prefix'])
-    headers['User-Agent'] = 'ORBIT/0.13.1'
+    headers['User-Agent'] = 'ORBIT/0.14.0'
     try:
         with httpx.Client(transport=transport, timeout=httpx.Timeout(20, connect=5), follow_redirects=False, trust_env=True) as client:
             with client.stream(method, base + path, headers=headers, json=payload) as response:

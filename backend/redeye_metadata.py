@@ -441,3 +441,5 @@ def register_redeye_metadata(app, db, identity, permit, project_check, audit, va
             c.execute('UPDATE redeye_import_tests SET status=?,receipt=? WHERE id=?', ('reviewed', canonical(receipt), ident))
             audit(c, who, 'redeye_metadata.legacy_manually_reviewed', project, ident)
             return receipt
+
+    app.state.metadata_inspect = inspect

@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from backend.providers import ProviderError
 
 API = "https://api.bsdd.buildingsmart.org"
-USER_AGENT = "ORBIT/0.13.1"
+USER_AGENT = "ORBIT/0.14.0"
 # Only anonymous, public metadata is shared. Never cache customer data or errors.
 _CACHE = OrderedDict()
 _CACHE_LOCK = RLock()

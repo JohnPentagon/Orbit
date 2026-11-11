@@ -1,6 +1,6 @@
 # Connection-first local workspace
 
-Version 0.13.1, 11 November 2026.
+Version 0.14.0, 11 November 2026.
 
 ## Open the application
 
@@ -41,3 +41,6 @@ Use [TESTER_CHECKLIST.md](TESTER_CHECKLIST.md) to distinguish the already report
 ## Interface preview
 
 [Connection hub preview](images/connection-hub.png) shows the Constellation navy/cyan/amber brand treatment in an isolated browser-test workspace. Its example workspace name is entered by the test, not seeded into the application.
+
+
+Mappings → Create mapping now selects any two saved connections, reads bounded samples, chooses matching keys and field rules, and runs Compare data. Swap direction supports reverse comparisons. Overview → Connection health provides manual checks; Data validation summarises current reports. Existing SQL mapping previews remain available in a collapsed section. Reports are scoped to captured data, not complete registers or file hashes.

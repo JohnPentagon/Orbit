@@ -83,7 +83,7 @@ def test_adapters_get_only_minimal_resources_and_no_link_following():
         return httpx.Response(200,json={**FIXTURES["forma"],"links":{"next":{"href":"https://evil.example"}}})
     result=read_page("forma","https://vendor.example","synthetic-secret","hubs",{},transport=httpx.MockTransport(handler))
     assert result["returned"]==1 and result["imported"]==0 and len(calls)==1
-    assert set(result["resources"][0])=={"id","label","kind"}
+    assert set(result["resources"][0])=={"id","label","kind","fields"}
 
 
 def test_resource_list_validation_and_size_limit():

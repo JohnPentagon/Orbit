@@ -181,3 +181,18 @@ These items are also available per connection under Connection preparation. Adde
 - [ ] Before cloud deployment: production identity, tenant isolation, managed secrets, storage/database, job execution, backups, retention and operational support.
 
 Automated regression results are recorded separately in STATUS.md. They establish software behaviour under fixtures, not vendor connectivity or customer acceptance.
+
+## v0.14 — connection comparisons and dashboard
+
+Automated tests use simulated data. These customer UAT checks remain pending:
+
+- [ ] Open Overview: health is unverified before a check, then timestamped after Check read. Test a failed credential and expired evidence.
+- [ ] Mappings → Create mapping: select RedEye and Autodesk, read samples, choose shared document-number fields (or explicitly choose filename_stem), map metadata fields, save, Compare data.
+- [ ] Repeat RedEye → Meridian Explorer and reverse direction. Confirm Explorer property names and supported API/view with administrator. PowerWeb alone is not an Explorer endpoint.
+- [ ] Compare two connections on the same platform and SQL ↔ document data where available.
+- [ ] Check duplicate matching keys, missing counterparts, missing required values and differing metadata. Missing counterpart means not in the bounded sample.
+- [ ] Select optional bSDD property/type/unit rules; test invalid values and unknown fields.
+- [ ] Overview validation totals must match latest current comparison reports. Old reports remain visible as stale after sample expiry, credential/configuration or dictionary changes.
+- [ ] Switch project: no connections, samples, mappings or reports leak between projects.
+
+Comparison captures are bounded (RedEye: up to five artefact details; most REST: first 25; SQL: existing bounded table reader). No complete register, file equality or project compliance is claimed. Read sample performs external GETs through existing scoped adapters; Compare data uses saved samples and does not write either platform. Existing RedEye metadata update remains a separate explicit workflow. Procore currently exposes company/project/field-definition datasets, not document tools. Health checks are manual, not background uptime monitoring.

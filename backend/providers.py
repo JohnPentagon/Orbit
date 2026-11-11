@@ -110,6 +110,7 @@ def read_page(provider, base, secret, operation, scope, header="", prefix="", tr
     except (httpx.HTTPError, ValueError):
         raise ProviderError("read_failed", "Provider response could not be read; verify network access and contract")
     collection, response_shape = resource_collection(provider, operation, data)
+    from backend.record_data import fields
     resources = []
     for item in collection[:25]:
         if not isinstance(item, dict) or not isinstance(item.get("id"), (str, int)) or isinstance(item.get("id"), bool):
@@ -122,7 +123,7 @@ def read_page(provider, base, secret, operation, scope, header="", prefix="", tr
             raise ProviderError("contract_mismatch", "Resource label is not text")
         redact = lambda value: str(value).replace(secret, "[REDACTED]")
         kind = {"groups": "group", "metadata_keys": "metadata_key"}.get(operation, "artefact")
-        resources.append({"id": redact(item["id"])[:500], "label": redact(label)[:250], "kind": redact(item.get("type", kind))[:100]})
+        resources.append({"id": redact(item["id"])[:500], "label": redact(label)[:250], "kind": redact(item.get("type", kind))[:100], "fields": fields({k:v for k,v in item.items() if k not in {"links","relationships"}}, secret)})
     return {"operation": operation, "resources": resources, "returned": len(resources), "response_shape": response_shape, "coverage": "Bounded sample: at most 25 resources; not a complete register", "imported": 0, "files_transferred": 0}
 
 

@@ -442,3 +442,6 @@ def register_sql_connections(app,db,identity,permit,project_check,audit,vault,no
                       (ident,who['tenant_id'],project,version,canonical(config),canonical(preview),now(),who['user_id']))
             audit(c,who,'sql.mapping_saved',project,ident)
         return {'id':ident,'version':version,'preview':preview,'written':False}
+
+    app.state.sql_sample = sample
+    app.state.sql_objects = objects
