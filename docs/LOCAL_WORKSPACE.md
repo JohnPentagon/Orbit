@@ -1,6 +1,6 @@
 # Connection-first local workspace
 
-Version 0.13, 11 November 2026.
+Version 0.13.1, 11 November 2026.
 
 ## Open the application
 
@@ -40,4 +40,4 @@ Use [TESTER_CHECKLIST.md](TESTER_CHECKLIST.md) to distinguish the already report
 
 ## Interface preview
 
-[Connection hub preview](images/connection-hub.png) shows the dark/orange framing in an isolated browser-test workspace. Its example workspace name is entered by the test, not seeded into the application.
+[Connection hub preview](images/connection-hub.png) shows the Constellation navy/cyan/amber brand treatment in an isolated browser-test workspace. Its example workspace name is entered by the test, not seeded into the application.

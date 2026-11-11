@@ -1,3 +1,5 @@
+**Brand update (v0.13.1):** the supplied ORBIT / Pentagon Solutions Constellation identity is applied: navy, cyan, amber, paper and teal; constellation logo; company attribution; headline and tagline. [Brand application](docs/BRANDING.md) · [Interface preview](docs/images/connection-hub.png).
+
 **Local workspace (v0.13):** one connection hub, five navigation areas and a dark/orange interface. Fresh workspaces start empty; the normal launcher no longer opens a synthetic-role dashboard. Existing real connection setup and credentials are preserved. [Start here](docs/LOCAL_WORKSPACE.md) · [Interface preview](docs/images/connection-hub.png). The backend remains Python until the agreed [.NET/Entra migration](docs/DOTNET_MIGRATION.md).
 
 **SQL connections (v0.12):** Microsoft SQL Server/Azure SQL table and column browsing, bounded samples, and saved project/connection mapping previews are now available. Install the optional SQL support/ODBC driver once, then use the portal. [SQL setup and scope](docs/SQL_CONNECTIONS.md). RedEye's first customer-reported write pass is recorded in the testing checklist.

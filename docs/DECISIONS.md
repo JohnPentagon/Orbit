@@ -69,3 +69,7 @@ Owner reported the RedEye write worked and requested it count as a first pass; r
 ### 11 November 2026 — connection-first local UI
 
 The user requested a complete, friendly local connection experience, removal of synthetic content from the normal UI and restrained neon-orange accents. Replace duplicate catalogue/read/additional/tool navigation with Overview, Connections, Mappings, Activity and Settings. Scope setup to the selected provider and keep RedEye metadata in that same workspace. Start new local installations empty; preserve existing real connections/credentials and historic audit data instead of deleting the local database. Use explicit loopback-only local operator sessions, not a role picker or a production-authentication claim. Keep the proven Python adapters during this UI acceptance pass; the agreed ASP.NET Core 10/Entra cutover remains required before Azure publishing.
+
+### 11 November 2026 — supplied Constellation identity
+
+Apply the user's brand board rather than the earlier orange-led concept: exact navy/cyan/amber/paper/teal palette, five-node ring mark, ORBIT/by Pentagon Solutions lockup, campaign headline and supporting line. Recreate scalable icon assets from the supplied image, retain functional app actions, and keep deployment/connector behaviour unchanged.

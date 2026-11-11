@@ -11,11 +11,11 @@ async function nav(name){await page.locator('.portal-nav').getByRole('button',{n
 async function platform(name){await page.locator('.platform-card').filter({has:page.getByRole('heading',{name,exact:true})}).click();}
 async function width(){assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'Page overflows horizontally');}
 try{
- await page.goto(base);await page.getByRole('heading',{name:'Make this workspace yours',exact:true}).waitFor();
+ await page.goto(base);assert.equal(await page.title(),'ORBIT by Pentagon Solutions');const mark=await page.request.get(base+'/brand/orbit-mark.svg');assert.equal(mark.status(),200);assert.match(await mark.text(),/#69D9FD/);assert.match(await mark.text(),/#FFB64C/);await page.getByRole('heading',{name:'Make this workspace yours',exact:true}).waitFor();
  await page.screenshot({path:'/workspace/Orbit/.local/screenshots/portal-welcome.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});await width();await page.setViewportSize({width:1440,height:1100});
  await page.getByLabel('Workspace name',{exact:true}).fill('Signalworks');await page.getByLabel('First project name',{exact:true}).fill('Central Hospital');await page.getByLabel('Operator name',{exact:true}).fill('Alex');await page.getByRole('button',{name:'Create workspace',exact:true}).click();
- await page.getByRole('heading',{name:/Your information.*Connected\./}).waitFor();
+ await page.getByRole('heading',{name:/Make project.*data consistent\./}).waitFor();
  assert.equal(await page.locator('.portal-nav button').count(),5);assert.equal(await page.getByLabel('Test identity',{exact:true}).count(),0);
  await page.locator('.portal-stat').filter({hasText:'Saved connections'}).getByText('0',{exact:true}).waitFor();
  await nav('Connections');await page.getByRole('heading',{name:'Connections',exact:true}).waitFor();assert.equal(await page.locator('.platform-card').count(),8);
