@@ -1,3 +1,5 @@
+**Current no-new-paid-resources UAT route:** use the existing App Service, `FileUat` persistent storage, Entra app registration and Environment variables. No Azure SQL, Key Vault or GitHub Actions build is needed for this route. Follow [the simple hosting steps](AZURE_SIMPLE_UAT.md). Existing plan charges/free-tier limits remain unchanged.
+
 # ORBIT — native .NET 10 Azure UAT
 
 Prepared 12 November 2026. Target: existing **OrbitPortal**, Windows App Service, **RG-RandD**, **North Europe**. No Azure resources have been changed from this workspace. It currently has no Azure outbound identity or Azure login. ACC customer testing is still pending.

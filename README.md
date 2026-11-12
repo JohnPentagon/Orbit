@@ -1,3 +1,5 @@
+**Current no-new-paid-resources UAT route:** use the existing App Service, `FileUat` persistent storage, Entra app registration and Environment variables. No Azure SQL, Key Vault or GitHub Actions build is needed for this route. Follow [the simple hosting steps](docs/AZURE_SIMPLE_UAT.md). Existing plan charges/free-tier limits remain unchanged.
+
 **Native .NET Azure UAT candidate:** ASP.NET Core 10 backend, Entra sign-in, role/project grants, Azure SQL storage and Windows deployment workflow are under `dotnet/` and `.github/workflows/azure-dotnet-uat.yml`. Not yet deployed; full connector parity remains in progress. [Deployment requirements and current limitations](docs/AZURE_DOTNET_UAT.md).
 
 **Connection comparisons (v0.14.0):** Mappings supports any two configured connections, explicit matching keys and field rules, read-only sampled reports, optional bSDD validation, and timestamped health/data-validation panels on Overview. Customer checks: [testing checklist](docs/TESTER_CHECKLIST.md).

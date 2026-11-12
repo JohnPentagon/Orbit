@@ -1,3 +1,5 @@
+**Current no-new-paid-resources UAT route:** use the existing App Service, `FileUat` persistent storage, Entra app registration and Environment variables. No Azure SQL, Key Vault or GitHub Actions build is needed for this route. Follow [the simple hosting steps](AZURE_SIMPLE_UAT.md). Existing plan charges/free-tier limits remain unchanged.
+
 # ASP.NET Core 10 migration boundary
 
 12 November 2026 update: a native ASP.NET Core 10 UAT candidate now exists under `dotnet/Orbit.Api`, with its own integration tests and Windows packaging. It is not yet deployed and does not yet have full feature parity. See [Azure UAT deployment and parity status](AZURE_DOTNET_UAT.md). The existing local Python launcher remains unchanged for rollback and continuing customer tests.

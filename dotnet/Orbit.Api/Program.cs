@@ -25,50 +25,51 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.IISServerOptions>(o =>
     o.MaxRequestBodySize = 1_000_000
 );
 builder.Logging.AddFilter("Microsoft.AspNetCore.Authentication", LogLevel.Warning);
-if (!builder.Environment.IsDevelopment())
-{
-    foreach (
-        var key in new[]
-        {
-            "Entra:TenantId",
-            "Entra:ClientId",
-            "Entra:ClientSecret",
-            "Orbit:AdminObjectIds",
-            "Orbit:EncryptionKey",
-            "Orbit:KeyRingPath",
-        }
-    )
-        if (string.IsNullOrWhiteSpace(builder.Configuration[key]))
-            throw new InvalidOperationException($"Required hosted configuration is missing: {key}");
-}
+builder.Services.AddSingleton<UatStorage>();
 builder.Services.AddSingleton<Cipher>();
-builder
-    .Services.AddDataProtection()
-    .SetApplicationName("ORBIT.NET10")
-    .PersistKeysToFileSystem(
-        new DirectoryInfo(
-            builder.Configuration["Orbit:KeyRingPath"]
-                ?? Path.Combine(builder.Environment.ContentRootPath, ".data", "keys")
-        )
-    );
+builder.Services.AddDataProtection().SetApplicationName("ORBIT.NET10");
 builder
     .Services.AddOptions<KeyManagementOptions>()
-    .Configure<Cipher>((o, c) => o.XmlEncryptor = new KeyEncryption(c));
-builder.Services.AddDbContext<OrbitDb>(o =>
-{
-    var sql = builder.Configuration.GetConnectionString("Orbit");
-    if (!string.IsNullOrWhiteSpace(sql))
-        o.UseSqlServer(sql);
-    else if (builder.Environment.IsDevelopment())
-        o.UseSqlite(
-            "Data Source="
-                + Path.Combine(builder.Environment.ContentRootPath, ".data", "orbit-net.db")
+    .Configure<Cipher, IConfiguration, IHostEnvironment, ILoggerFactory>(
+        (o, c, cfg, environment, logger) =>
+        {
+            var path = cfg["Orbit:KeyRingPath"]
+                ?? Path.Combine(environment.ContentRootPath, ".data", "keys");
+            o.XmlRepository =
+                new Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository(
+                    new DirectoryInfo(path),
+                    logger
+                );
+            o.XmlEncryptor = new KeyEncryption(c);
+        }
+    );
+builder.Services.AddDbContext<OrbitDb>(
+    (services, o) =>
+    {
+        var config = services.GetRequiredService<IConfiguration>();
+        var sql = config.GetConnectionString("Orbit");
+        var fileStorage = string.Equals(
+            config["Orbit:Storage"],
+            UatStorage.Mode,
+            StringComparison.OrdinalIgnoreCase
         );
-    else
-        throw new InvalidOperationException(
-            "An Azure SQL connection is required outside Development."
-        );
-});
+        if (fileStorage && !string.IsNullOrWhiteSpace(sql))
+            throw new InvalidOperationException("Choose FileUat or a SQL connection, not both.");
+        if (fileStorage)
+            o.UseSqlite(services.GetRequiredService<UatStorage>().ConnectionString);
+        else if (!string.IsNullOrWhiteSpace(sql))
+            o.UseSqlServer(sql);
+        else if (builder.Environment.IsDevelopment())
+            o.UseSqlite(
+                "Data Source="
+                    + Path.Combine(builder.Environment.ContentRootPath, ".data", "orbit-net.db")
+            );
+        else
+            throw new InvalidOperationException(
+                "Choose FileUat with a persistent data path, or configure an application SQL connection."
+            );
+    }
+);
 builder
     .Services.AddAuthentication(o =>
     {
@@ -128,6 +129,28 @@ builder
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<ConnectorService>();
 var app = builder.Build();
+var fileUat = string.Equals(
+    app.Configuration["Orbit:Storage"],
+    UatStorage.Mode,
+    StringComparison.OrdinalIgnoreCase
+);
+if (!app.Environment.IsDevelopment())
+{
+    foreach (
+        var key in new[]
+        {
+            "Entra:TenantId",
+            "Entra:ClientId",
+            "Entra:ClientSecret",
+            "Orbit:AdminObjectIds",
+            "Orbit:EncryptionKey",
+            "Orbit:KeyRingPath",
+        }
+    )
+        if (string.IsNullOrWhiteSpace(app.Configuration[key]))
+            throw new InvalidOperationException($"Required hosted configuration is missing: {key}");
+}
+
 app.Services.GetRequiredService<Cipher>();
 if (!app.Environment.IsDevelopment())
 {
@@ -285,11 +308,14 @@ app.Map("/api/{**path}", () =>
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html");
-Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, ".data"));
+if (app.Environment.IsDevelopment())
+    Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, ".data"));
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<OrbitDb>();
-    if (
+    if (fileUat)
+        await app.Services.GetRequiredService<UatStorage>().Initialise(db);
+    else if (
         app.Environment.IsDevelopment()
         || app.Configuration.GetValue<bool>("Orbit:InitializeDatabase")
     )

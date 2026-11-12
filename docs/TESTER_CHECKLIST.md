@@ -201,3 +201,14 @@ Comparison captures are bounded (RedEye: up to five artefact details; most REST:
 ## Native .NET hosted candidate — 12 November 2026
 
 Use [Azure .NET UAT acceptance](AZURE_DOTNET_UAT.md#hosted-uat-acceptance). .NET tests are separate from local Python tests. Entra customer sign-in, Azure SQL managed identity, Key Vault references, restart persistence and deployment have not been customer verified. Hosted writes stay disabled. Native Autodesk OAuth, SQL connector, generic REST/MC, complete Procore scope, and uncertain-write reconciliation remain parity work. Do not mark these complete based on local Python passes.
+
+
+## Existing App Service / FileUat acceptance
+
+- [ ] Follow [the current no-new-paid-resources hosting steps](AZURE_SIMPLE_UAT.md); do not create a SQL database, vault, new plan or monitoring add-on.
+- [ ] One Windows app instance; Production environment; Entra sign-in and explicit administrator object ID remain enforced.
+- [ ] `/api/readiness` succeeds without a SQL connection string.
+- [ ] After an App Service restart, projects and credentials survive and decrypt correctly.
+- [ ] Confirm the actual Azure persistent filesystem works correctly with the limited single-instance UAT store.
+- [ ] Later code deployments preserve `D:\home\data\orbit` and the unchanged encryption key.
+- [ ] Build-provider availability and .NET 10 SDK validated in Deployment Centre; no billable GitHub Actions job assumed.

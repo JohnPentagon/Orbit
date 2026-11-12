@@ -49,12 +49,13 @@ public sealed class AuthHandler(
 
 public sealed class Factory : WebApplicationFactory<Program>
 {
+    public bool FileUat;
     public string Folder = Path.Combine(Path.GetTempPath(), "orbit-dotnet-tests-" + Guid.NewGuid());
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Directory.CreateDirectory(Folder);
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(FileUat ? "Production" : "Development");
         builder.ConfigureAppConfiguration(
             (_, c) =>
                 c.AddInMemoryCollection(
@@ -62,6 +63,9 @@ public sealed class Factory : WebApplicationFactory<Program>
                     {
                         ["Entra:TenantId"] = "11111111-1111-1111-1111-111111111111",
                         ["Entra:ClientId"] = "22222222-2222-2222-2222-222222222222",
+                        ["Entra:ClientSecret"] = "fixture-only-not-a-live-secret",
+                        ["Orbit:Storage"] = FileUat ? "FileUat" : null,
+                        ["Orbit:DataPath"] = Path.Combine(Folder, "data"),
                         ["Orbit:AdminObjectIds"] = "33333333-3333-3333-3333-333333333333",
                         ["Orbit:EncryptionKey"] = Convert.ToBase64String(new byte[32]),
                         ["Orbit:KeyRingPath"] = Path.Combine(Folder, "keys"),
@@ -77,12 +81,13 @@ public sealed class Factory : WebApplicationFactory<Program>
                     o.DefaultChallengeScheme = "Test";
                 })
                 .AddScheme<AuthenticationSchemeOptions, AuthHandler>("Test", _ => { });
-            s.AddDbContext<OrbitDb>(o =>
-                Microsoft.EntityFrameworkCore.SqliteDbContextOptionsBuilderExtensions.UseSqlite(
-                    o,
-                    "Data Source=" + Path.Combine(Folder, "test.db")
-                )
-            );
+            if (!FileUat)
+                s.AddDbContext<OrbitDb>(o =>
+                    Microsoft.EntityFrameworkCore.SqliteDbContextOptionsBuilderExtensions.UseSqlite(
+                        o,
+                        "Data Source=" + Path.Combine(Folder, "test.db")
+                    )
+                );
         });
     }
 }
@@ -284,5 +289,95 @@ public sealed class HostedTests
         var xml = File.ReadAllText(Directory.GetFiles(directory, "key-*.xml").Single());
         Assert.Contains("orbitEncryptedKey", xml);
         Assert.DoesNotContain("<masterKey", xml);
+    }
+
+    [Fact]
+    public async Task Production_file_uat_survives_restart_without_sql_or_passwordless_login()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "orbit-file-uat-tests-" + Guid.NewGuid());
+        await using (var first = new Factory { FileUat = true, Folder = directory })
+        {
+            using var client = first.CreateClient(
+                new() { BaseAddress = new("https://localhost"), AllowAutoRedirect = false }
+            );
+            Assert.Equal(
+                HttpStatusCode.Unauthorized,
+                (await client.GetAsync("/api/workspace")).StatusCode
+            );
+            client.DefaultRequestHeaders.Add("Test-Object", "33333333-3333-3333-3333-333333333333");
+            await client.GetAsync("/api/workspace");
+            var session = await client.GetFromJsonAsync<JsonObject>("/api/session");
+            client.DefaultRequestHeaders.Add("X-ORBIT-CSRF", session!.S("csrf_token"));
+            var created = await client.PostAsJsonAsync(
+                "/api/local/projects",
+                new { name = "Persistent UAT project" }
+            );
+            Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/readiness")).StatusCode);
+            Assert.True(File.Exists(Path.Combine(directory, "data", "orbit-uat.db")));
+            using (var scope = first.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<OrbitDb>();
+                var row = db.Add(
+                    "11111111-1111-1111-1111-111111111111",
+                    "uat-project",
+                    "connection",
+                    "restart-check",
+                    new()
+                    {
+                        ["name"] = "Persistent connection",
+                        ["provider"] = "redeye",
+                        ["kind"] = "read",
+                    }
+                );
+                row.Secret = scope
+                    .ServiceProvider.GetRequiredService<Cipher>()
+                    .Protect("synthetic-restart-key");
+                await db.SaveChangesAsync();
+            }
+        }
+        await using (var restarted = new Factory { FileUat = true, Folder = directory })
+        {
+            using var client = restarted.CreateClient(
+                new() { BaseAddress = new("https://localhost"), AllowAutoRedirect = false }
+            );
+            client.DefaultRequestHeaders.Add("Test-Object", "33333333-3333-3333-3333-333333333333");
+            var workspace = await client.GetFromJsonAsync<JsonObject>("/api/workspace");
+            Assert.Contains(workspace!["projects"]!.AsArray(), p =>
+                p.S("name") == "Persistent UAT project"
+            );
+            using (var scope = restarted.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<OrbitDb>();
+                var row = await db.Find(
+                    "11111111-1111-1111-1111-111111111111",
+                    "uat-project",
+                    "connection",
+                    "restart-check"
+                );
+                Assert.Equal(
+                    "synthetic-restart-key",
+                    scope.ServiceProvider.GetRequiredService<Cipher>().Unprotect(row!.Secret!)
+                );
+            }
+            Assert.Equal(
+                HttpStatusCode.NotImplemented,
+                (await client.GetAsync("/api/local/status")).StatusCode
+            );
+        }
+    }
+
+    [Fact]
+    public void File_uat_refuses_a_second_process_lease()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "orbit-lease-test-" + Guid.NewGuid());
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["Orbit:DataPath"] = directory }
+            )
+            .Build();
+        using (var storage = new UatStorage(config))
+            Assert.Throws<InvalidOperationException>(() => new UatStorage(config));
+        using var restarted = new UatStorage(config);
     }
 }
