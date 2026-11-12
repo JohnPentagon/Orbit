@@ -1,0 +1,63 @@
+name: Build and deploy ORBIT .NET UAT
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy the tested package to OrbitPortal
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - run: dotnet test dotnet/Orbit.Tests/Orbit.Tests.csproj --configuration Release
+      - run: dotnet publish dotnet/Orbit.Api/Orbit.Api.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/orbit-windows
+      - run: mkdir -p artifacts/orbit-windows/wwwroot && cp -R frontend/dist/. artifacts/orbit-windows/wwwroot/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orbit-dotnet10-windows-uat
+          path: artifacts/orbit-windows
+          retention-days: 7
+  deploy:
+    if: inputs.deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment: azure-uat
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: orbit-dotnet10-windows-uat
+          path: package
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: OrbitPortal
+          package: package
+      - name: Confirm native health endpoint
+        env:
+          ORBIT_HOSTNAME: ${{ vars.ORBIT_HOSTNAME }}
+        run: |
+          test -n "$ORBIT_HOSTNAME"
+          curl --fail --retry 6 --retry-delay 10 --max-time 30 "https://$ORBIT_HOSTNAME/api/health" > health.json
+          node -e 'const h=JSON.parse(require("fs").readFileSync("health.json"));if(h.runtime!=="ASP.NET Core 10"||h.mode!=="hosted-workspace")process.exit(1)'
+          curl --fail --retry 6 --retry-delay 10 --max-time 30 "https://$ORBIT_HOSTNAME/api/readiness"

@@ -1,3 +1,5 @@
+**Native .NET Azure UAT candidate:** ASP.NET Core 10 backend, Entra sign-in, role/project grants, Azure SQL storage and Windows deployment workflow are under `dotnet/` and `.github/workflows/azure-dotnet-uat.yml`. Not yet deployed; full connector parity remains in progress. [Deployment requirements and current limitations](docs/AZURE_DOTNET_UAT.md).
+
 **Connection comparisons (v0.14.0):** Mappings supports any two configured connections, explicit matching keys and field rules, read-only sampled reports, optional bSDD validation, and timestamped health/data-validation panels on Overview. Customer checks: [testing checklist](docs/TESTER_CHECKLIST.md).
 
 **Brand update (v0.13.1):** the supplied ORBIT / Pentagon Solutions Constellation identity is applied: navy, cyan, amber, paper and teal; constellation logo; company attribution; headline and tagline. [Brand application](docs/BRANDING.md) · [Interface preview](docs/images/connection-hub.png).

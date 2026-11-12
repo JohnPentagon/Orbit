@@ -16,7 +16,7 @@ try{
  await page.setViewportSize({width:390,height:844});await width();await page.setViewportSize({width:1440,height:1100});
  await page.getByLabel('Workspace name',{exact:true}).fill('Signalworks');await page.getByLabel('First project name',{exact:true}).fill('Central Hospital');await page.getByLabel('Operator name',{exact:true}).fill('Alex');await page.getByRole('button',{name:'Create workspace',exact:true}).click();
  await page.getByRole('heading',{name:/Make project.*data consistent\./}).waitFor();
- assert.equal(await page.locator('.portal-nav button').count(),5);assert.equal(await page.getByLabel('Test identity',{exact:true}).count(),0);
+ await page.locator('.portal-nav button').nth(4).waitFor();assert.equal(await page.locator('.portal-nav button').count(),5);assert.equal(await page.getByLabel('Test identity',{exact:true}).count(),0);
  await page.locator('.portal-stat').filter({hasText:'Saved connections'}).getByText('0',{exact:true}).waitFor();
  await nav('Connections');await page.getByRole('heading',{name:'Connections',exact:true}).waitFor();assert.equal(await page.locator('.platform-card').count(),8);
  await page.screenshot({path:'/workspace/Orbit/.local/screenshots/portal-connections.png',fullPage:true});

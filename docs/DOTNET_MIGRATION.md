@@ -1,6 +1,8 @@
 # ASP.NET Core 10 migration boundary
 
-11 November 2026. The team primarily maintains C#/.NET. The agreed hosted target is ASP.NET Core 10 on the existing Windows App Service OrbitPortal (RG-RandD, North Europe), with React retained. The backend has **not** been ported yet. The connection-first local UI continues to use the working Python adapters while their behaviour is validated.
+12 November 2026 update: a native ASP.NET Core 10 UAT candidate now exists under `dotnet/Orbit.Api`, with its own integration tests and Windows packaging. It is not yet deployed and does not yet have full feature parity. See [Azure UAT deployment and parity status](AZURE_DOTNET_UAT.md). The existing local Python launcher remains unchanged for rollback and continuing customer tests.
+
+Original migration boundary (11 November 2026): the team primarily maintains C#/.NET. The agreed hosted target is ASP.NET Core 10 on the existing Windows App Service OrbitPortal (RG-RandD, North Europe), with React retained. At that point, the backend had **not** been ported yet. The current native status is linked above. The connection-first local UI continues to use the working Python adapters while their behaviour is validated.
 
 ## Preserve the UI/API contract
 

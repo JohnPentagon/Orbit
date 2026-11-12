@@ -196,3 +196,8 @@ Automated tests use simulated data. These customer UAT checks remain pending:
 - [ ] Switch project: no connections, samples, mappings or reports leak between projects.
 
 Comparison captures are bounded (RedEye: up to five artefact details; most REST: first 25; SQL: existing bounded table reader). No complete register, file equality or project compliance is claimed. Read sample performs external GETs through existing scoped adapters; Compare data uses saved samples and does not write either platform. Existing RedEye metadata update remains a separate explicit workflow. Procore currently exposes company/project/field-definition datasets, not document tools. Health checks are manual, not background uptime monitoring.
+
+
+## Native .NET hosted candidate — 12 November 2026
+
+Use [Azure .NET UAT acceptance](AZURE_DOTNET_UAT.md#hosted-uat-acceptance). .NET tests are separate from local Python tests. Entra customer sign-in, Azure SQL managed identity, Key Vault references, restart persistence and deployment have not been customer verified. Hosted writes stay disabled. Native Autodesk OAuth, SQL connector, generic REST/MC, complete Procore scope, and uncertain-write reconciliation remain parity work. Do not mark these complete based on local Python passes.

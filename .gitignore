@@ -6,3 +6,10 @@ node_modules/
 dist/
 .env
 *.tsbuildinfo
+
+# .NET builds and local hosted configuration
+**/bin/
+**/obj/
+**/.data/
+**/appsettings.Local.json
+artifacts/
