@@ -1,11 +1,13 @@
-# Manual Azure UAT deployment package
+# Latest manual Azure UAT package: v0.16.0
 
-Download **ORBIT-UAT-dotnet10-win-x86-5409ea9.zip** using GitHub's **Download raw file** button or **View raw** link while signed in. This is the published deployment package; GitHub's repository **Code → Download ZIP** is source code and is not a deployment package.
+Download **[ORBIT-UAT-0.16.0-dotnet10-win-x86.zip](ORBIT-UAT-0.16.0-dotnet10-win-x86.zip)** using **Download raw file** or **View raw** while signed in to GitHub. GitHub's repository-wide Code → Download ZIP is source code, not a deployment package.
 
-Built from source commit `5409ea9`: native .NET 10, self-contained Windows x86, branded frontend included. The 12 release tests passed. This is a UAT migration candidate; full connector parity remains in progress and hosted RedEye writes stay disabled. No credentials, encryption keys or local databases are included.
+Built from source `8eeb3ced00fa1f06289fe8245cd37bd215eda2bb`: native ASP.NET Core 10, self-contained Windows x86, branded frontend. Includes the completed native APS OAuth/PKCE, app-only auth, explicit renewal, named hub/project/folder discovery and scoped document read. All **32 native release tests** and the hosted Autodesk UI fixture passed. Live Autodesk customer consent remains to be confirmed. Other migration gaps remain documented and hosted RedEye writes stay disabled.
 
-Upload the ZIP directly to Azure Kudu Zip Push Deploy after configuring the environment variables in [the simple hosting guide](../docs/AZURE_SIMPLE_UAT.md). Keep the worker 32-bit and use one instance. No new Azure resource or GitHub Actions build is required.
+Upload this ZIP directly through Kudu ZIP deployment and restart OrbitPortal. Check `/api/health` reports **0.16.0**. Keep the existing Entra environment variables, Orbit encryption key, data path and key-ring path unchanged; do not delete the data directory. No new paid resource is required.
 
-SHA-256: `ed166b47e172751558e10b0e6df6745d212e4361994a3517947c819752dca8a3`.
+Then follow [the hosted Autodesk setup steps](../docs/HOSTED_AUTODESK.md). For interactive consent, use an APS confidential web app that supports three-legged OAuth. Put the APS secret in ORBIT's Autodesk app settings, not the Entra environment variable.
 
-This copy is provided because the chat download link could not be used. It does not deploy or change Azure configuration.
+SHA-256: `74d00092462eda67ce4d536bb020d99de5b0aec0b78d789fe6ebd42a27ea0015`.
+
+The previous v0.15 deployment ZIP remains available in Git history. This directory provides the current package so outdated builds are not accidentally selected.
