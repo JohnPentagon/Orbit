@@ -25,6 +25,9 @@ builder.Services.Configure<Microsoft.AspNetCore.Builder.IISServerOptions>(o =>
     o.MaxRequestBodySize = 1_000_000
 );
 builder.Logging.AddFilter("Microsoft.AspNetCore.Authentication", LogLevel.Warning);
+
+// OAuth callback codes must not appear in ASP.NET request-start/finish logs.
+builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
 builder.Services.AddSingleton<UatStorage>();
 builder.Services.AddSingleton<Cipher>();
 builder.Services.AddDataProtection().SetApplicationName("ORBIT.NET10");
@@ -84,6 +87,20 @@ builder
         o.Cookie.SameSite = SameSiteMode.Lax;
         o.ExpireTimeSpan = TimeSpan.FromHours(8);
         o.SlidingExpiration = true;
+        o.Events.OnSigningIn = ctx =>
+        {
+            AutodeskOAuth.UpgradeSession(ctx.Principal);
+            return Task.CompletedTask;
+        };
+        o.Events.OnValidatePrincipal = ctx =>
+        {
+            if (ctx.Principal?.HasClaim(c => c.Type == AutodeskOAuth.SessionClaim) != true)
+            {
+                AutodeskOAuth.UpgradeSession(ctx.Principal);
+                ctx.ShouldRenew = true;
+            }
+            return Task.CompletedTask;
+        };
         o.Events.OnRedirectToLogin = ctx =>
         {
             ctx.Response.StatusCode = 401;
@@ -124,10 +141,11 @@ builder
     .Services.AddHttpClient("vendor", c =>
     {
         c.Timeout = TimeSpan.FromSeconds(25);
-        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.15.0");
+        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.16.0");
     })
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<ConnectorService>();
+builder.Services.AddScoped<AutodeskOAuth>();
 var app = builder.Build();
 var fileUat = string.Equals(
     app.Configuration["Orbit:Storage"],
@@ -238,7 +256,7 @@ app.MapGet("/api/health", () => new
     {
         status = "ok",
         mode = "hosted-workspace",
-        version = "0.15.0",
+        version = "0.16.0",
         runtime = "ASP.NET Core 10",
     });
 app.MapGet("/api/readiness", async (OrbitDb db) =>
@@ -296,6 +314,7 @@ ConnectionRoutes.Map(app);
 BsddRoutes.Map(app);
 AnalysisRoutes.Map(app);
 RedEyeRoutes.Map(app);
+AutodeskOAuth.Map(app);
 app.Map("/api/{**path}", () =>
     Results.Json(
         new

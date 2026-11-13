@@ -19,7 +19,20 @@ public static class ConnectionRoutes
         if (!config.B("approved_test_access") || !config.B("vendor_settings_confirmed"))
             issues.Add("Confirm vendor settings and authorised access.");
         if (r.Secret == null && config.S("auth_mode") != "none")
-            issues.Add("Add a credential.");
+            issues.Add(
+                d.S("provider") == "forma"
+                    ? "Save the APS application below, then select Sign in with Autodesk. An API key is not required."
+                    : "Add a credential."
+            );
+        if (
+            d.S("provider") == "forma"
+            && r.Secret != null
+            && d["autodesk_expires"] != null
+            && d.N("autodesk_expires") <= DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 15
+        )
+            issues.Add(
+                "Autodesk authorisation expired. Select Renew authorisation or Sign in with Autodesk."
+            );
         var readIssues = new JsonArray(
             issues
                 .Select(x =>
@@ -28,7 +41,10 @@ public static class ConnectionRoutes
                         {
                             ["code"] = "setup_required",
                             ["message"] = x!.ToString(),
-                            ["next_action"] = "Review the saved connection.",
+                            ["next_action"] =
+                                d.S("provider") == "forma"
+                                    ? "Use the APS application and Autodesk sign-in controls below."
+                                    : "Review the saved connection.",
                         }
                 )
                 .ToArray()
@@ -66,7 +82,7 @@ public static class ConnectionRoutes
                     return Results.Ok(
                         new
                         {
-                            server_version = "0.15.0",
+                            server_version = "0.16.0",
                             live_reads_enabled = true,
                             connections = rows.Where(r => r.Data().S("kind") == kind)
                                 .Select(r => Public(r, kind == "additional")),
@@ -90,6 +106,8 @@ public static class ConnectionRoutes
                     await who.Project(db, project);
                     service.Approved(body.Required("base_url"));
                     var provider = body.Required("provider", 50);
+                    if (provider == "forma" && body.S("base_url").TrimEnd('/') != AutodeskOAuth.Api)
+                        throw new ApiException(422, "Use the documented Autodesk API host.");
                     if (
                         kind == "read" && !new[] { "forma", "redeye" }.Contains(provider)
                         || kind == "additional"
@@ -148,9 +166,16 @@ public static class ConnectionRoutes
                             422,
                             "Enter a credential without control characters."
                         );
+                    if (r.Data().S("provider") == "forma")
+                        throw new ApiException(
+                            409,
+                            "Use the APS application settings and Sign in with Autodesk instead of entering a token manually."
+                        );
                     r.Secret = cipher.Protect(secret);
                     var d = r.Data();
                     d["last_result"] = null;
+                    if (r.Data().S("provider") == "forma")
+                        d.Remove("autodesk_expires");
                     db.Change(r, d);
                     db.Audit(who, "connection.credential_replaced", project, id);
                     await db.SaveChangesAsync();
@@ -170,9 +195,13 @@ public static class ConnectionRoutes
                     var who = await Actor.Resolve(ctx, db, cfg);
                     who.Permit("connection");
                     var r = await Scoped(db, who, project, id);
+                    if (r.Data().S("provider") == "forma")
+                        await AutodeskOAuth.Invalidate(db, r);
                     r.Secret = null;
                     var d = r.Data();
                     d["last_result"] = null;
+                    if (r.Data().S("provider") == "forma")
+                        d.Remove("autodesk_expires");
                     db.Change(r, d);
                     db.Audit(who, "connection.credential_removed", project, id);
                     await db.SaveChangesAsync();
@@ -196,6 +225,11 @@ public static class ConnectionRoutes
                     var r = await Scoped(db, who, project, id);
                     service.Approved(body.Required("base_url"));
                     var d = r.Data();
+                    if (
+                        d.S("provider") == "forma"
+                        && body.S("base_url").TrimEnd('/') != AutodeskOAuth.Api
+                    )
+                        throw new ApiException(422, "Use the documented Autodesk API host.");
                     if (body.S("provider") != d.S("provider"))
                         throw new ApiException(
                             409,
@@ -209,6 +243,8 @@ public static class ConnectionRoutes
                     d["configuration"] = body.Copy();
                     d["name"] = body.Required("name", 100);
                     d["last_result"] = null;
+                    if (r.Data().S("provider") == "forma")
+                        await AutodeskOAuth.Invalidate(db, r);
                     r.Secret = null;
                     db.Change(r, d);
                     db.Audit(who, "connection.configuration_updated", project, id);
@@ -231,8 +267,17 @@ public static class ConnectionRoutes
                     var who = await Actor.Resolve(ctx, db, cfg);
                     who.Permit("connection");
                     var r = await Scoped(db, who, project, id);
+                    var generation = r.Version;
                     var result = await service.Read(r, body, ctx.RequestAborted);
-                    await db.Entry(r).ReloadAsync();
+                    db.ChangeTracker.Clear();
+                    who = await Actor.Resolve(ctx, db, cfg);
+                    who.Permit("connection");
+                    r = await Scoped(db, who, project, id);
+                    if (r.Version != generation)
+                        throw new ApiException(
+                            409,
+                            "Connection changed during the read. Read again using the current selection."
+                        );
                     var data = r.Data();
                     result["observed"] = DateTimeOffset.UtcNow.ToString("O");
                     data["last_result"] = new JsonObject

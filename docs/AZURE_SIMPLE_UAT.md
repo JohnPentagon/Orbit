@@ -1,3 +1,5 @@
+**Autodesk update available:** v0.16.0 completes native APS sign-in and discovery. [Download/update and connect Autodesk](HOSTED_AUTODESK.md). Existing Environment variables and FileUat storage remain applicable.
+
 # Host ORBIT on the existing App Service — no new paid resources
 
 12 November 2026. This is the current deployment route. It supersedes the Azure SQL/Key Vault prerequisites in the earlier migration candidate.

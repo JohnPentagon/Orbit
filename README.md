@@ -1,3 +1,5 @@
+**Hosted Autodesk v0.16.0 (13 November 2026):** native APS consent/PKCE, app-only tokens, renewal, named scope discovery and document reads are implemented. [Update and connect Autodesk](docs/HOSTED_AUTODESK.md). Customer APS acceptance remains pending; hosted RedEye read was previously confirmed by the user.
+
 **Current no-new-paid-resources UAT route:** use the existing App Service, `FileUat` persistent storage, Entra app registration and Environment variables. No Azure SQL, Key Vault or GitHub Actions build is needed for this route. Follow [the simple hosting steps](docs/AZURE_SIMPLE_UAT.md). Existing plan charges/free-tier limits remain unchanged.
 
 **Native .NET Azure UAT candidate:** ASP.NET Core 10 backend, Entra sign-in, role/project grants, Azure SQL storage and Windows deployment workflow are under `dotnet/` and `.github/workflows/azure-dotnet-uat.yml`. Not yet deployed; full connector parity remains in progress. [Deployment requirements and current limitations](docs/AZURE_DOTNET_UAT.md).

@@ -1,3 +1,5 @@
+**13 November update:** native Autodesk OAuth/discovery is now implemented in v0.16.0. [Hosted Autodesk update/setup](HOSTED_AUTODESK.md). The user has deployed the earlier UAT and confirmed Microsoft sign-in and a RedEye read; live Autodesk acceptance is the next check.
+
 **Current no-new-paid-resources UAT route:** use the existing App Service, `FileUat` persistent storage, Entra app registration and Environment variables. No Azure SQL, Key Vault or GitHub Actions build is needed for this route. Follow [the simple hosting steps](AZURE_SIMPLE_UAT.md). Existing plan charges/free-tier limits remain unchanged.
 
 # ORBIT — native .NET 10 Azure UAT
@@ -10,7 +12,7 @@ Prepared 12 November 2026. Target: existing **OrbitPortal**, Windows App Service
 
 Implemented first slices: Entra OIDC sign-in; server-enforced tenant, role and project grants; CSRF; encrypted connection credentials and encrypted cookie key ring; Azure SQL persistence; project settings and audit; RedEye inventory/metadata reads and verification; bSDD dictionary/class/selected-property APIs; connection-based sample mapping, comparisons and optional bSDD value validation. Meridian Explorer has a native bounded reader for supported explicit credentials; Windows delegation/network access is not established.
 
-**This is a migration candidate, not full feature parity.** Native Autodesk OAuth/discovery, SQL connector browsing/mapping previews, generic REST/MC adapters, full Procore scope/field-definition flows, bSDD document import and RedEye uncertain-write reconciliation still need completion and acceptance. Unsupported API operations explicitly return 501. Existing local Python data and credentials are not migrated or deleted. Re-enter approved credentials through the secured hosted portal; do not upload `.local` or its vault key.
+**This is a migration candidate, not full feature parity.** SQL connector browsing/mapping previews, generic REST/MC adapters, full Procore scope/field-definition flows, bSDD document import and RedEye uncertain-write reconciliation still need completion and acceptance. Unsupported API operations explicitly return 501. Existing local Python data and credentials are not migrated or deleted. Re-enter approved credentials through the secured hosted portal; do not upload `.local` or its vault key.
 
 A RedEye write port exists for further parity testing but the deployment configuration keeps `Orbit__EnableRedEyeWrites=false`. Do not enable it until full fresh-target, preserved-metadata, no-replay, crash/uncertain-outcome and manual-reconciliation tests pass. The existing local RedEye writer remains available separately.
 
@@ -63,7 +65,7 @@ Never paste keys, passwords, client secrets, refresh tokens, publish profiles or
 - [ ] Capture data, create mapping, compare; confirm missing sample counterparts and validation findings against known data.
 - [ ] Restart app: projects, encrypted credentials, selected definitions, grants and reports persist. Confirm decryption still works and membership removal takes effect.
 - [ ] Azure SQL backup/restore and key recovery procedure reviewed. Source APIs and private networks tested independently.
-- [ ] ACC consent/discovery and remaining migration slices completed before declaring parity with the local application.
+- [ ] Deploy native Autodesk v0.16.0 and complete live ACC acceptance using [the hosted Autodesk guide](HOSTED_AUTODESK.md). Other migration slices remain pending.
 - [ ] RedEye write port and reconciliation accepted before enabling hosted writes.
 
 Health is manual evidence, not continuous vendor monitoring. Sample comparisons do not prove complete registers or binary-file equality. Do not delete or alter the working local database/key pair during this migration.

@@ -35,6 +35,10 @@ public sealed class AuthHandler(
                     ?? "11111111-1111-1111-1111-111111111111"
             ),
             new Claim("name", "Fixture operator"),
+            new Claim(
+                AutodeskOAuth.SessionClaim,
+                Request.Headers["Test-Session"].FirstOrDefault() ?? "fixture-session"
+            ),
         };
         return Task.FromResult(
             AuthenticateResult.Success(

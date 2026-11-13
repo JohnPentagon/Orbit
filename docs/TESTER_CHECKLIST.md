@@ -212,3 +212,8 @@ Use [Azure .NET UAT acceptance](AZURE_DOTNET_UAT.md#hosted-uat-acceptance). .NET
 - [ ] Confirm the actual Azure persistent filesystem works correctly with the limited single-instance UAT store.
 - [ ] Later code deployments preserve `D:\home\data\orbit` and the unchanged encryption key.
 - [ ] Build-provider availability and .NET 10 SDK validated in Deployment Centre; no billable GitHub Actions job assumed.
+
+
+## Hosted Autodesk v0.16.0 — 13 November 2026
+
+Native APS implementation and automated fixtures are complete; use [the live acceptance checks and exact setup steps](HOSTED_AUTODESK.md#evidence-and-customer-checks). This supersedes earlier notes marking native Autodesk OAuth/discovery unported. User-reported hosted Microsoft sign-in and RedEye read are first passes; no real APS customer sign-in has been performed here. Preserve the existing Azure data directory and encryption key during ZIP updates.

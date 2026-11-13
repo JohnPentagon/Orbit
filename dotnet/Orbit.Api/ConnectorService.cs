@@ -57,6 +57,8 @@ public sealed class ConnectorService(
         request.Headers.Accept.Add(new("application/json"));
         if (profile != null)
         {
+            if (profile.Data().S("provider") == "forma")
+                AutodeskOAuth.FreshAccess(profile);
             if (profile.Secret == null)
                 throw new ApiException(409, "Add a credential to this connection first.");
             var config = profile.Data()["configuration"]!;
@@ -274,7 +276,7 @@ public sealed class ConnectorService(
                     + scope("project", "vendor_project")
                     + "/folders/"
                     + scope("folder", "folder")
-                    + "/contents",
+                    + "/contents?page%5Blimit%5D=25",
                 _ => throw new ApiException(422, "Choose a supported Autodesk read."),
             };
         }
