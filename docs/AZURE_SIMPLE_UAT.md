@@ -1,3 +1,5 @@
+**Latest UI update:** v0.17.0 simplifies saved mapping profiles; [profile workflow and update notes](MAPPING_PROFILES.md). Existing Azure settings and storage paths are unchanged.
+
 **Autodesk update available:** v0.16.0 completes native APS sign-in and discovery. [Download/update and connect Autodesk](HOSTED_AUTODESK.md). Existing Environment variables and FileUat storage remain applicable.
 
 # Host ORBIT on the existing App Service — no new paid resources

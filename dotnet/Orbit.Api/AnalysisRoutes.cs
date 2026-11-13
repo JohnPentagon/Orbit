@@ -220,10 +220,16 @@ public static class AnalysisRoutes
         };
     }
 
-    static async Task Fresh(OrbitDb db, Actor who, string project, Record snapshot)
+    static async Task Fresh(
+        OrbitDb db,
+        Actor who,
+        string project,
+        Record snapshot,
+        bool requireRecent = true
+    )
     {
         var d = snapshot.Data();
-        if (d.N("expires") <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        if (requireRecent && d.N("expires") <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             throw new ApiException(409, "Read fresh samples before comparing.");
         var c = await ConnectionRoutes.Scoped(db, who, project, d.S("connection_id"));
         if (c.Version != d.N("generation"))
@@ -266,16 +272,20 @@ public static class AnalysisRoutes
                 }
                 snapshots.Add(Descriptor(s, fresh));
             }
+            var maps = (await db.List(who.Tenant, project, "mapping"))
+                .Where(m => !m.Data().B("deleted"))
+                .ToList();
             var reports = new JsonArray();
             foreach (var r in await db.List(who.Tenant, project, "report"))
             {
                 var d = r.Data();
-                var stale = false;
+                var current = maps.FirstOrDefault(m => m.Id == d.S("mapping_id"));
+                var stale = current == null || current.Version != d.N("mapping_version");
                 var reportConfig = d["report"]!["configuration"]!;
                 if (reportConfig["reference_version"] != null)
                 {
                     var definition = await db.Find(who.Tenant, project, "bsdd", "reference");
-                    stale = definition?.Version != reportConfig.N("reference_version");
+                    stale = stale || definition?.Version != reportConfig.N("reference_version");
                 }
                 foreach (var side in new[] { "source", "target" })
                 {
@@ -308,11 +318,15 @@ public static class AnalysisRoutes
                         ["outcome"] = d["report"]!.S("outcome"),
                         ["created"] = r.Updated.ToString("O"),
                         ["stale"] = stale,
+                        ["mapping_deleted"] = current == null,
                     }
                 );
             }
-            var maps = await db.List(who.Tenant, project, "mapping");
-            var latest = reports.GroupBy(r => r.S("mapping_id")).Select(g => g.First()!).ToList();
+            var latest = reports
+                .Where(r => maps.Any(m => m.Id == r.S("mapping_id")))
+                .GroupBy(r => r.S("mapping_id"))
+                .Select(g => g.First()!)
+                .ToList();
             var active = latest.Where(r => !r.B("stale")).ToList();
             return Results.Ok(
                 new
@@ -519,7 +533,60 @@ public static class AnalysisRoutes
                 who.Permit("draft");
                 await who.Project(db, project);
                 var config = body.Copy();
+                foreach (
+                    var reserved in new[]
+                    {
+                        "id",
+                        "expected_version",
+                        "deleted",
+                        "deleted_at",
+                        "deleted_by",
+                    }
+                )
+                    config.Remove(reserved);
                 config.Required("name", 100);
+                if ((body.S("source_key").Length == 0) != (body.S("target_key").Length == 0))
+                    throw new ApiException(
+                        422,
+                        "Choose document matching parameters on both sides, or leave both blank to save a profile for later."
+                    );
+                config["source_key"] = body.S("source_key");
+                config["target_key"] = body.S("target_key");
+                config["key_mode"] = body.S("key_mode", "text");
+                config["source_key_transform"] = body.S("source_key_transform", "trim");
+                config["target_key_transform"] = body.S("target_key_transform", "trim");
+                if (!new[] { "text", "typed" }.Contains(config.S("key_mode")))
+                    throw new ApiException(422, "Choose a supported comparison mode.");
+                var transforms = new[]
+                {
+                    "copy",
+                    "trim",
+                    "uppercase",
+                    "lowercase",
+                    "filename_stem",
+                };
+                if (
+                    !transforms.Contains(config.S("source_key_transform"))
+                    || !transforms.Contains(config.S("target_key_transform"))
+                )
+                    throw new ApiException(422, "Choose a supported matching option.");
+                if (
+                    body["rules"] is not JsonArray submittedRules
+                    || submittedRules.Count is < 1 or > 50
+                )
+                    throw new ApiException(422, "Choose 1–50 parameter pairs.");
+                if (
+                    submittedRules.Any(r =>
+                        r == null || !transforms.Contains(r.S("transform", "copy"))
+                    )
+                )
+                    throw new ApiException(422, "Choose supported parameter options.");
+                if (
+                    submittedRules.Select(r => r.S("target_field")).Distinct().Count()
+                    != submittedRules.Count
+                )
+                    throw new ApiException(422, "Map each target parameter once.");
+
                 if (body.S("source_snapshot") == body.S("target_snapshot"))
                     throw new ApiException(422, "Choose distinct samples.");
                 foreach (var side in new[] { "source", "target" })
@@ -530,10 +597,13 @@ public static class AnalysisRoutes
                         "snapshot",
                         body.Required(side + "_snapshot", 150)
                     ) ?? throw new ApiException(404, "Sample unavailable.");
-                    await Fresh(db, who, project, sample);
+                    await Fresh(db, who, project, sample, false);
                     var d = sample.Data();
                     var c = await ConnectionRoutes.Scoped(db, who, project, d.S("connection_id"));
-                    if (!Fields(d).Contains(body.Required(side + "_key")))
+                    if (
+                        body.S(side + "_key").Length > 0
+                        && !Fields(d).Contains(body.S(side + "_key"))
+                    )
                         throw new ApiException(422, "Choose matching fields from the sample.");
                     config[side] = new JsonObject
                     {
@@ -558,15 +628,52 @@ public static class AnalysisRoutes
                 }
                 if (body["rules"] is not JsonArray rules || rules.Count is < 1 or > 50)
                     throw new ApiException(422, "Choose 1–50 field mappings.");
-                var id = Guid.NewGuid().ToString();
-                db.Add(who.Tenant, project, "mapping", id, config);
+                var id = body.S("id");
+                Record saved;
+                if (id.Length > 0)
+                {
+                    saved = await db.Find(who.Tenant, project, "mapping", id)
+                        ?? throw new ApiException(404, "Mapping profile unavailable.");
+                    if (saved.Data().B("deleted"))
+                        throw new ApiException(404, "Mapping profile was deleted.");
+                    if (body.N("expected_version") != saved.Version)
+                        throw new ApiException(409, "Profile changed. Reload it before saving.");
+                    if (
+                        await db.Find(
+                            who.Tenant,
+                            project,
+                            "mapping-revision",
+                            id + ":" + saved.Version
+                        ) == null
+                    )
+                        db.Add(
+                            who.Tenant,
+                            project,
+                            "mapping-revision",
+                            id + ":" + saved.Version,
+                            saved.Data()
+                        );
+                    db.Change(saved, config);
+                }
+                else
+                {
+                    id = Guid.NewGuid().ToString();
+                    saved = db.Add(who.Tenant, project, "mapping", id, config);
+                }
+                db.Add(
+                    who.Tenant,
+                    project,
+                    "mapping-revision",
+                    id + ":" + saved.Version,
+                    config.Copy()
+                );
                 db.Audit(who, "analysis.mapping_saved", project, id);
                 await db.SaveChangesAsync();
                 return Results.Ok(
                     new
                     {
                         id,
-                        version = 1,
+                        version = saved.Version,
                         written = false,
                     }
                 );
@@ -591,6 +698,16 @@ public static class AnalysisRoutes
                 if (body.N("expected_version") != m.Version)
                     throw new ApiException(409, "Mapping changed; reload first.");
                 var config = m.Data();
+                if (config.B("deleted"))
+                    throw new ApiException(
+                        404,
+                        "Mapping profile was deleted. Saved reports remain available."
+                    );
+                if (config.S("source_key").Length == 0 || config.S("target_key").Length == 0)
+                    throw new ApiException(
+                        409,
+                        "Set document matching parameters in this profile before comparing data."
+                    );
                 var samples = new List<Record>();
                 foreach (var side in new[] { "source", "target" })
                 {
@@ -652,6 +769,67 @@ public static class AnalysisRoutes
                         id = rid,
                         created = stored.Updated.ToString("O"),
                         report,
+                    }
+                );
+            }
+        );
+        app.MapDelete(
+            root + "/mappings/{id}",
+            async (
+                string project,
+                string id,
+                [Microsoft.AspNetCore.Mvc.FromBody] JsonObject body,
+                HttpContext ctx,
+                OrbitDb db,
+                IConfiguration cfg
+            ) =>
+            {
+                var who = await Actor.Resolve(ctx, db, cfg);
+                who.Permit("draft");
+                await who.Project(db, project);
+                var profile = await db.Find(who.Tenant, project, "mapping", id)
+                    ?? throw new ApiException(404, "Mapping profile unavailable.");
+                if (profile.Data().B("deleted"))
+                    throw new ApiException(404, "Mapping profile was already deleted.");
+                if (!body.B("confirmed"))
+                    throw new ApiException(422, "Confirm deleting this mapping profile.");
+                if (body.N("expected_version") != profile.Version)
+                    throw new ApiException(409, "Profile changed. Reload before deleting it.");
+                if (
+                    await db.Find(
+                        who.Tenant,
+                        project,
+                        "mapping-revision",
+                        id + ":" + profile.Version
+                    ) == null
+                )
+                    db.Add(
+                        who.Tenant,
+                        project,
+                        "mapping-revision",
+                        id + ":" + profile.Version,
+                        profile.Data()
+                    );
+                var data = profile.Data();
+                data["deleted"] = true;
+                data["deleted_at"] = DateTimeOffset.UtcNow.ToString("O");
+                data["deleted_by"] = who.Id;
+                db.Change(profile, data);
+                db.Add(
+                    who.Tenant,
+                    project,
+                    "mapping-revision",
+                    id + ":" + profile.Version,
+                    data.Copy()
+                );
+                db.Audit(who, "analysis.mapping_deleted", project, id);
+                await db.SaveChangesAsync();
+                return Results.Ok(
+                    new
+                    {
+                        deleted = true,
+                        reports_preserved = true,
+                        written = false,
                     }
                 );
             }

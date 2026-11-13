@@ -29,6 +29,7 @@ def create_fixture_app():
     redeye_pilot.request_vendor=vendor
     def read_page(provider,base,secret,operation,scope,header='',prefix='',transport=None):
         resources=[{'id':str(k['id']),'label':k['name'],'kind':'metadata_key'} for k in KEYS] if operation=='metadata_keys' else [{'id':'777','label':'TEST-777 · Disposable test artefact','kind':'artefact'}]
+        if provider=='forma' and operation=='documents':resources=[{'id':'urn:fixture:document','label':'TEST-777.pdf','kind':'items','fields':{'attributes.displayName':'TEST-777.pdf','attributes.description':'Disposable test artefact'}}]
         return {'synthetic':False,'live_verified':True,'operation':operation,'resources':resources,'returned':len(resources),'coverage':'Simulated browser-fixture response; no customer HTTP.','response_shape':'raw_array'}
     read_connections.read_page=read_page;redeye_metadata.read_page=read_page
     def sql_query(cfg,password,choice=None):

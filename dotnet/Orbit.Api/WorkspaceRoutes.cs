@@ -181,7 +181,9 @@ public static class WorkspaceRoutes
                                     ?? 0,
                             };
                         }),
-                        mapping_count = (await db.List(who.Tenant, project, "mapping")).Count,
+                        mapping_count = (await db.List(who.Tenant, project, "mapping")).Count(m =>
+                            !m.Data().B("deleted")
+                        ),
                         dictionary = new
                         {
                             enabled = b.B("enabled"),

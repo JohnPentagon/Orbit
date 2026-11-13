@@ -217,3 +217,8 @@ Use [Azure .NET UAT acceptance](AZURE_DOTNET_UAT.md#hosted-uat-acceptance). .NET
 ## Hosted Autodesk v0.16.0 — 13 November 2026
 
 Native APS implementation and automated fixtures are complete; use [the live acceptance checks and exact setup steps](HOSTED_AUTODESK.md#evidence-and-customer-checks). This supersedes earlier notes marking native Autodesk OAuth/discovery unported. User-reported hosted Microsoft sign-in and RedEye read are first passes; no real APS customer sign-in has been performed here. Preserve the existing Azure data directory and encryption key during ZIP updates.
+
+
+## Mapping profiles v0.17.0 — 13 November 2026
+
+User confirmed the hosted Autodesk connection. Profile-editor changes remain to be customer tested: [mapping profile acceptance](MAPPING_PROFILES.md#deployment-and-customer-checklist). Verify save/reload, edit without duplication, deliberate copy, meaningful document matching, delete confirmation, retained historical reports and unchanged hosted connections.

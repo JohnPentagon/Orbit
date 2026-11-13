@@ -6,19 +6,20 @@ const page=await browser.newPage({viewport:{width:1440,height:1100}});const erro
 try{
  await page.goto('http://127.0.0.1:8005');await page.getByRole('button',{name:'Open workspace',exact:true}).click();
  await page.getByRole('heading',{name:'Connection health',exact:true}).waitFor();
- await page.locator('.portal-nav').getByRole('button',{name:'Mappings',exact:true}).click();await page.getByRole('button',{name:'Create mapping',exact:true}).click();
- const sides=page.locator('.analysis-sides>div');
- await sides.nth(0).getByLabel('Connection',{exact:true}).selectOption({label:'Project RedEye · redeye'});
- await sides.nth(0).getByRole('button',{name:'Read sample',exact:true}).click();
- await sides.nth(0).locator('label').filter({hasText:/^Matching key/}).locator('select').selectOption('number');
- await sides.nth(1).getByLabel('Connection',{exact:true}).selectOption({label:'Project SQL · sql'});
- await sides.nth(1).getByLabel('Captured dataset',{exact:true}).selectOption({index:1});
- const choices=await sides.nth(1).locator('label').filter({hasText:/^Matching key/}).locator('select').locator('option').allTextContents();
- await sides.nth(1).locator('label').filter({hasText:/^Matching key/}).locator('select').selectOption(choices[1]);
- await page.getByLabel('Mapping name',{exact:true}).fill(mappingName);
- await page.locator('.analysis-rule').locator('label').filter({hasText:/^Source field/}).locator('select').selectOption('title');
- await page.locator('.analysis-rule').locator('label').filter({hasText:/^Target field/}).locator('select').selectOption('Title');
- await page.getByRole('button',{name:'Save mapping',exact:true}).click();await page.locator('.analysis-saved').filter({hasText:mappingName}).getByRole('button',{name:'Compare data',exact:true}).click();
+ await page.locator('.portal-nav').getByRole('button',{name:'Mappings',exact:true}).click();await page.getByRole('button',{name:'Create mapping profile',exact:true}).click();
+ const sides=page.locator('.mapping-connection');
+ await page.getByLabel('Source connection',{exact:true}).selectOption({label:'Project RedEye · RedEye'});
+ await sides.nth(0).getByRole('button',{name:/Load parameters|Refresh parameters/,exact:true}).click();
+
+ await page.getByLabel('Target connection',{exact:true}).selectOption({label:'Project SQL · SQL Server'});
+
+ await page.locator('.mapping-matching>summary').click();
+ await page.getByLabel('Document identifier on A',{exact:true}).selectOption('number');
+ await page.getByLabel('Document identifier on B',{exact:true}).selectOption('DocumentNumber');
+ await page.getByLabel('Profile name',{exact:true}).fill(mappingName);
+ await page.getByLabel('Source parameter 1',{exact:true}).selectOption('title');
+ await page.getByLabel('Target parameter 1',{exact:true}).selectOption('Title');
+ await page.getByRole('button',{name:'Save profile',exact:true}).click();await page.locator('.analysis-saved').filter({hasText:mappingName}).getByRole('button',{name:'Compare data',exact:true}).click();
  await page.getByRole('heading',{name:mappingName,exact:true,level:2}).waitFor();assert.equal(await page.locator('[role=alert]').count(),0);
  await page.screenshot({path:'/workspace/Orbit/.local/screenshots/portal-comparison.png',fullPage:true});
  await page.locator('.portal-nav').getByRole('button',{name:'Overview',exact:true}).click();await page.getByRole('heading',{name:'Data validation',exact:true}).waitFor();

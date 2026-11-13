@@ -73,3 +73,36 @@ def test_autodesk_meridian_adapter_capture_and_reverse(tmp_path,reverse):
     assert r.status_code==200,r.text
     r=client.post(base+'/mappings/'+r.json()['id']+'/compare',json={'expected_version':1})
     assert r.status_code==200 and r.json()['report']['counts']['matched']==1
+
+
+def test_saved_profile_edit_delete_retains_report(tmp_path):
+    path=tmp_path/'profiles.db';app=create_app(path,demo=True);client=TestClient(app);client.post('/api/demo/session',json={'user_id':'north-owner'})
+    connections=[setup(client),setup(client)]
+    app.state.profile_read=lambda *args: {'resources':[{'id':'D-001','label':'Drawing','kind':'document','fields':{'number':'D-001','title':'Floor plan'}}],'coverage':'Profile fixture only'}
+    base='/api/projects/harbour/analysis'
+    snapshots=[client.post(base+'/capture',json={'kind':'read','id':ident}).json()['snapshot']['id'] for ident in connections]
+    body=dict(name='Reusable parameters',source_snapshot=snapshots[0],target_snapshot=snapshots[1],rules=[dict(source_field='title',target_field='title')])
+    saved=client.post(base+'/mappings',json=body);assert saved.status_code==200,saved.text;ident=saved.json()['id']
+    assert client.post(base+f'/mappings/{ident}/compare',json={'expected_version':1}).status_code==409
+    body.update(id=ident,expected_version=1,source_key='number',target_key='number',name='Edited parameters')
+    edited=client.post(base+'/mappings',json=body);assert edited.status_code==200,edited.text;assert edited.json()['version']==2
+    assert client.post(base+'/mappings',json=body).status_code==409
+    report=client.post(base+f'/mappings/{ident}/compare',json={'expected_version':2});assert report.status_code==200,report.text;rid=report.json()['id']
+    assert client.request('DELETE',base+f'/mappings/{ident}',json={'expected_version':1,'confirmed':True}).status_code==409
+    assert client.request('DELETE',base+f'/mappings/{ident}',json={'expected_version':2,'confirmed':False}).status_code==422
+    deleted=client.request('DELETE',base+f'/mappings/{ident}',json={'expected_version':2,'confirmed':True});assert deleted.status_code==200,deleted.text
+    context=client.get(base).json();assert not context['mappings'];assert context['reports'][0]['mapping_deleted'];assert context['validation']['fresh_reports']==0 and context['validation']['stale_reports']==0
+    assert client.get(base+'/reports/'+rid).status_code==200
+    assert client.post(base+f'/mappings/{ident}/compare',json={'expected_version':3}).status_code==404
+    with sqlite3.connect(path) as c:assert c.execute('SELECT count(*) FROM connection_mapping_history WHERE mapping_id=?',(ident,)).fetchone()[0]==3
+
+
+def test_profile_schema_can_be_saved_after_data_expiry(tmp_path):
+    path=tmp_path/'expired-profile.db';app=create_app(path,demo=True);client=TestClient(app);client.post('/api/demo/session',json={'user_id':'north-owner'})
+    connections=[setup(client),setup(client)]
+    app.state.profile_read=lambda *args: {'resources':[{'id':'D','label':'Drawing','kind':'document','fields':{'number':'D'}}],'coverage':'Fixture'}
+    base='/api/projects/harbour/analysis';samples=[client.post(base+'/capture',json={'kind':'read','id':ident}).json()['snapshot']['id'] for ident in connections]
+    with sqlite3.connect(path) as c:c.execute('UPDATE connection_snapshots SET expires=1')
+    saved=client.post(base+'/mappings',json=dict(name='Saved field rules',source_snapshot=samples[0],target_snapshot=samples[1],source_key='number',target_key='number',rules=[dict(source_field='number',target_field='number')]))
+    assert saved.status_code==200,saved.text
+    assert client.post(base+'/mappings/'+saved.json()['id']+'/compare',json={'expected_version':1}).status_code==409

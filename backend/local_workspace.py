@@ -131,4 +131,5 @@ def register_local_workspace(app,db,identity,permit,project_check,audit,now,loca
             reference=c.execute('SELECT configuration FROM bsdd_settings WHERE tenant_id=? AND project_id=?',(who['tenant_id'],project)).fetchone()
             bsdd=json.loads(reference['configuration']) if reference else {}
             mappings=c.execute('SELECT count(*) FROM sql_mappings WHERE tenant_id=? AND project_id=?',(who['tenant_id'],project)).fetchone()[0]
+            mappings+=sum(not json.loads(r[0]).get('deleted') for r in c.execute('SELECT configuration FROM connection_mappings WHERE tenant_id=? AND project_id=?',(who['tenant_id'],project)))
         return {'connections':items,'mapping_count':mappings,'dictionary':{'enabled':bool(bsdd.get('enabled')),'name':(bsdd.get('dictionary') or {}).get('name'),'property_count':len(bsdd.get('properties',[]))},'observed':now()}

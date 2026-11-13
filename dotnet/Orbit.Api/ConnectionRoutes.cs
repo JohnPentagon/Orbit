@@ -82,7 +82,7 @@ public static class ConnectionRoutes
                     return Results.Ok(
                         new
                         {
-                            server_version = "0.16.0",
+                            server_version = "0.17.0",
                             live_reads_enabled = true,
                             connections = rows.Where(r => r.Data().S("kind") == kind)
                                 .Select(r => Public(r, kind == "additional")),

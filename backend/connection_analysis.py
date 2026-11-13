@@ -60,8 +60,8 @@ class Mapping(BaseModel):
     name:str=Field(min_length=1,max_length=100)
     source_snapshot:str=Field(min_length=1,max_length=100)
     target_snapshot:str=Field(min_length=1,max_length=100)
-    source_key:str=Field(min_length=1,max_length=500)
-    target_key:str=Field(min_length=1,max_length=500)
+    source_key:str=Field(default='',max_length=500)
+    target_key:str=Field(default='',max_length=500)
     key_mode:Literal['text','typed']='text'
     source_key_transform:Transform='trim'
     target_key_transform:Transform='trim'
@@ -69,9 +69,16 @@ class Mapping(BaseModel):
 
     @model_validator(mode='after')
     def distinct(self):
+        if bool(self.source_key)!=bool(self.target_key):raise ValueError('Choose matching parameters on both sides, or leave both blank.')
         if self.source_snapshot==self.target_snapshot:raise ValueError('Choose two distinct data scopes/snapshots.')
         if len({r.target_field for r in self.rules})!=len(self.rules):raise ValueError('Map each target field once.')
         return self
+
+
+class DeleteMapping(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    expected_version:int=Field(ge=1)
+    confirmed:bool=False
 
 
 class Run(BaseModel):
@@ -187,10 +194,10 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
         for key in ['scope','records','coverage']:result[key]=json.loads(result[key])
         return result
 
-    def fresh(c,who,project,snap):
+    def fresh(c,who,project,snap,require_recent=True):
         current=source(c,who,project,Ref(kind=snap['kind'],id=snap['connection_id']))
         if current['generation']!=snap['generation']:raise HTTPException(409,'Connection/reference changed; read a new sample before comparing.')
-        if snap['expires']<=int(time.time()):raise HTTPException(409,'Sample expired; read fresh data before comparing.')
+        if require_recent and snap['expires']<=int(time.time()):raise HTTPException(409,'Sample expired; read fresh data before comparing.')
         return current
 
     def save_snapshot(c,who,project,ref,row,operation,scope,records,coverage,observed=None,expires=None,schema_fields=None):
@@ -251,6 +258,7 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
             if cfg.get('enabled') and cfg.get('properties'):connections.append({'kind':'bsdd','id':'reference','name':'bSDD property reference','provider':'bsdd','generation':0,'health':'local_reference','last_check':None,'last_code':None,'scope_hint':'Selected project definitions'})
             snaps=[descriptor(c,who,project,saved(c,who,project,r['id'])) for r in c.execute('SELECT id FROM connection_snapshots WHERE tenant_id=? AND project_id=? ORDER BY observed DESC,rowid DESC LIMIT 150',(who['tenant_id'],project))]
             mappings=[{**dict(r),'configuration':json.loads(r['configuration'])} for r in c.execute('SELECT * FROM connection_mappings WHERE tenant_id=? AND project_id=? ORDER BY created DESC,id',(who['tenant_id'],project))]
+            mappings=[m for m in mappings if not m['configuration'].get('deleted')]
             reports=[]
             for r in c.execute('SELECT * FROM connection_comparisons WHERE tenant_id=? AND project_id=? ORDER BY created DESC,rowid DESC LIMIT 100',(who['tenant_id'],project)):
                 report=json.loads(r['report']);stale=False
@@ -263,10 +271,11 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
                         _,reference_now=definitions(c,who,project,report['configuration']['rules'])
                         stale=stale or reference_now!=report['configuration']['reference']
                     except HTTPException:stale=True
-                reports.append({'id':r['id'],'mapping_id':r['mapping_id'],'mapping_version':r['mapping_version'],'name':report['mapping_name'],'counts':report['counts'],'quality':report['quality'],'outcome':report['outcome'],'created':r['created'],'stale':stale or not current or current['version']!=r['mapping_version']})
+                reports.append({'id':r['id'],'mapping_id':r['mapping_id'],'mapping_version':r['mapping_version'],'name':report['mapping_name'],'counts':report['counts'],'quality':report['quality'],'outcome':report['outcome'],'created':r['created'],'stale':stale or not current or current['version']!=r['mapping_version'],'mapping_deleted':not bool(current)})
         health={s:sum(x['health']==s for x in connections) for s in ['read_verified','failed','blocked','needs_setup','stale','unverified']}
         latest={}
-        for r in reports:latest.setdefault(r['mapping_id'],r)
+        for r in reports:
+            if any(m['id']==r['mapping_id'] for m in mappings):latest.setdefault(r['mapping_id'],r)
         active=[r for r in latest.values() if not r['stale']]
         return {'connections':connections,'snapshots':snaps,'mappings':mappings,'reports':reports,'properties':cfg.get('properties',[]) if cfg.get('enabled') else [],
                 'health':health,'validation':{'mappings':len(mappings),'never_compared':sum(m['id'] not in latest for m in mappings),'fresh_reports':len(active),'stale_reports':sum(r['stale'] for r in latest.values()),'invalid_fields':sum(r['quality']['invalid_fields'] for r in active),'unknown_fields':sum(r['quality']['unknown_fields'] for r in active),'differences':sum(r['counts']['different'] for r in active),'unmatched_in_samples':sum(r['counts']['not_in_source_sample']+r['counts']['not_in_target_sample'] for r in active)},'scope':'Recorded checks and sampled validation, not continuous monitoring or whole-platform assurance.'}
@@ -332,7 +341,7 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
     def mapping(c,who,project,ident):
         project_check(c,who,project)
         row=c.execute('SELECT * FROM connection_mappings WHERE id=? AND tenant_id=? AND project_id=?',(ident,who['tenant_id'],project)).fetchone()
-        if not row:raise HTTPException(404,'Mapping unavailable in this project.')
+        if not row or json.loads(row['configuration']).get('deleted'):raise HTTPException(404,'Mapping unavailable in this project.')
         return dict(row)
 
     def definitions(c,who,project,rules):
@@ -352,8 +361,8 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
         permit(who,'draft')
         with db() as c:
             c.execute('BEGIN IMMEDIATE');left=saved(c,who,project,body.source_snapshot);right=saved(c,who,project,body.target_snapshot)
-            a=fresh(c,who,project,left);b=fresh(c,who,project,right)
-            if body.source_key not in field_names(left) or body.target_key not in field_names(right):raise HTTPException(422,'Choose matching fields from both captured samples.')
+            a=fresh(c,who,project,left,False);b=fresh(c,who,project,right,False)
+            if body.source_key and body.source_key not in field_names(left) or body.target_key and body.target_key not in field_names(right):raise HTTPException(422,'Choose matching fields from both captured samples.')
             if any(r.source_field not in field_names(left) or r.target_field not in field_names(right) for r in body.rules):raise HTTPException(422,'Choose mapping fields from the captured source and target schemas.')
             def contains(value,secret):
                 if isinstance(value,str):return secret in value
@@ -385,6 +394,7 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
             c.execute('BEGIN IMMEDIATE');m=mapping(c,who,project,ident)
             if m['version']!=body.expected_version:raise HTTPException(409,'Mapping changed; reload before comparing.')
             config=json.loads(m['configuration']);snaps=[]
+            if not config.get('source_key') or not config.get('target_key'):raise HTTPException(409,'Set document matching parameters in this profile before comparing data.')
             for side in ['source','target']:
                 ref=config[side]
                 row=c.execute('SELECT id FROM connection_snapshots WHERE tenant_id=? AND project_id=? AND kind=? AND connection_id=? AND operation=? AND scope=? ORDER BY observed DESC,rowid DESC LIMIT 1',(who['tenant_id'],project,ref['kind'],ref['id'],ref['operation'],canonical(ref['scope']))).fetchone()
@@ -402,6 +412,19 @@ def register_connection_analysis(app,db,identity,permit,project_check,audit,vaul
             c.execute('INSERT INTO connection_comparisons VALUES(?,?,?,?,?,?,?,?,?)',(rid,who['tenant_id'],project,ident,m['version'],snaps[0]['id'],snaps[1]['id'],canonical(report),created))
             audit(c,who,'analysis.comparison_completed',project,rid)
         return {'id':rid,'created':created,'report':report}
+
+    @app.delete('/api/projects/{project}/analysis/mappings/{ident}')
+    def delete_mapping(project:str,ident:str,body:DeleteMapping,who=Depends(identity)):
+        permit(who,'draft')
+        with db() as c:
+            c.execute('BEGIN IMMEDIATE');row=mapping(c,who,project,ident)
+            if not body.confirmed:raise HTTPException(422,'Confirm deleting this mapping profile.')
+            if row['version']!=body.expected_version:raise HTTPException(409,'Profile changed; reload before deleting.')
+            config=json.loads(row['configuration']);config.update(deleted=True,deleted_at=now(),deleted_by=who['user_id']);version=row['version']+1
+            c.execute('UPDATE connection_mappings SET version=?,configuration=?,created=?,updated_by=? WHERE id=?',(version,canonical(config),now(),who['user_id'],ident))
+            c.execute('INSERT INTO connection_mapping_history VALUES(?,?,?,?,?)',(ident,version,canonical(config),digest(config),now()))
+            audit(c,who,'analysis.mapping_deleted',project,ident)
+        return {'deleted':True,'reports_preserved':True,'written':False}
 
     @app.get('/api/projects/{project}/analysis/reports/{ident}')
     def report(project:str,ident:str,who=Depends(identity)):
