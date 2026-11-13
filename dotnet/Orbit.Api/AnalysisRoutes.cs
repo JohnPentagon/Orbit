@@ -408,6 +408,7 @@ public static class AnalysisRoutes
                 var who = await Actor.Resolve(ctx, db, cfg);
                 who.Permit("connection");
                 var r = await ConnectionRoutes.Scoped(db, who, project, body.Required("id", 150));
+                var generation = r.Version;
                 var data = r.Data();
                 if (body.S("kind") != data.S("kind"))
                     throw new ApiException(422, "Connection kind mismatch.");
@@ -427,6 +428,16 @@ public static class AnalysisRoutes
                     new() { ["operation"] = op },
                     ctx.RequestAborted
                 );
+                db.ChangeTracker.Clear();
+                who = await Actor.Resolve(ctx, db, cfg);
+                who.Permit("connection");
+                r = await ConnectionRoutes.Scoped(db, who, project, body.S("id"));
+                if (r.Version != generation)
+                    throw new ApiException(
+                        409,
+                        "Connection changed during the read. Refresh data for the current scope."
+                    );
+                data = r.Data();
                 var captured = DateTimeOffset.UtcNow;
                 data["last_result"] = new JsonObject
                 {
@@ -490,6 +501,20 @@ public static class AnalysisRoutes
                     result["coverage"] =
                         "Metadata for at most five selected artefacts or the first bounded page; not a complete register.";
                 }
+                db.ChangeTracker.Clear();
+                who = await Actor.Resolve(ctx, db, cfg);
+                who.Permit("connection");
+                r = await ConnectionRoutes.Scoped(db, who, project, body.S("id"));
+                if (r.Version != generation)
+                    throw new ApiException(409, "Connection changed during capture. Read again.");
+                data = r.Data();
+                data["last_result"] = new JsonObject
+                {
+                    ["operation"] = op,
+                    ["returned"] = records.Count,
+                    ["observed"] = DateTimeOffset.UtcNow.ToString("O"),
+                };
+                r.Json = data.ToJsonString();
                 var id = Guid.NewGuid().ToString();
                 var snapshot = db.Add(
                     who.Tenant,

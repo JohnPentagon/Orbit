@@ -1,3 +1,5 @@
+> v0.18.0: hosted Autodesk now supports nested folders, individual file selection and paged reads. See [Autodesk files](AUTODESK_FILES.md) for limits and acceptance checks; this supersedes earlier top-folder/25-total descriptions.
+
 # Hosted Autodesk / ACC document connection — v0.16.0
 
 13 November 2026. Native ASP.NET Core implementation of APS application settings, three-legged consent with PKCE, app-only tokens, explicit renewal, disconnect, named hub/project/top-folder discovery and scoped document metadata reads. No Python process, new Azure resource, paid database or Key Vault is required. Existing FileUat data and keys are preserved.

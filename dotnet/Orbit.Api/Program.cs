@@ -141,7 +141,7 @@ builder
     .Services.AddHttpClient("vendor", c =>
     {
         c.Timeout = TimeSpan.FromSeconds(25);
-        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.17.0");
+        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.18.0");
     })
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<ConnectorService>();
@@ -256,7 +256,7 @@ app.MapGet("/api/health", () => new
     {
         status = "ok",
         mode = "hosted-workspace",
-        version = "0.17.0",
+        version = "0.18.0",
         runtime = "ASP.NET Core 10",
     });
 app.MapGet("/api/readiness", async (OrbitDb db) =>

@@ -1,3 +1,5 @@
+> v0.18.0: hosted Autodesk now supports nested folders, individual file selection and paged reads. See [Autodesk files](AUTODESK_FILES.md) for limits and acceptance checks; this supersedes earlier top-folder/25-total descriptions.
+
 **Latest UI update:** v0.17.0 simplifies saved mapping profiles; [profile workflow and update notes](MAPPING_PROFILES.md). Existing Azure settings and storage paths are unchanged.
 
 **Autodesk update available:** v0.16.0 completes native APS sign-in and discovery. [Download/update and connect Autodesk](HOSTED_AUTODESK.md). Existing Environment variables and FileUat storage remain applicable.

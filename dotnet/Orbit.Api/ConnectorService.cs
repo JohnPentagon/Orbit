@@ -263,6 +263,19 @@ public sealed class ConnectorService(
         {
             if (root != "https://developer.api.autodesk.com")
                 throw new ApiException(422, "Use the Autodesk API host.");
+            if (op == "documents")
+            {
+                scope("project", "vendor_project");
+                scope("folder", "folder");
+                return await AutodeskDocuments.Read(
+                    this,
+                    r,
+                    cipher.Unprotect(
+                        r.Secret ?? throw new ApiException(409, "Sign in with Autodesk first.")
+                    ),
+                    ct
+                );
+            }
             path = op switch
             {
                 "hubs" => "/project/v1/hubs",

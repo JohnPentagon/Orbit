@@ -177,7 +177,7 @@ public static class RedEyeRoutes
                     ),
                     legacy_unresolved = Array.Empty<object>(),
                     uat_mode = cfg.GetValue<bool>("Orbit:EnableRedEyeWrites"),
-                    server_version = "0.17.0",
+                    server_version = "0.18.0",
                 }
             );
         });

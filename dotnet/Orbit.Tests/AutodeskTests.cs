@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Orbit.Tests;
 
-public sealed class ApsTransport : HttpMessageHandler
+public class ApsTransport : HttpMessageHandler
 {
     public const string ClientId = "fixture-aps-client";
     public const string ClientSecret = "fixture-aps-secret-123";
@@ -130,7 +130,9 @@ public sealed class ApsTransport : HttpMessageHandler
                 ["data"] = rows,
                 ["links"] = new JsonObject
                 {
-                    ["next"] = "https://unapproved.invalid/do-not-follow",
+                    ["next"] = path.StartsWith("/data/", StringComparison.Ordinal)
+                        ? null
+                        : "https://unapproved.invalid/do-not-follow",
                 },
             }
         );

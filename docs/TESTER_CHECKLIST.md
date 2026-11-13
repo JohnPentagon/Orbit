@@ -1,3 +1,5 @@
+> v0.18.0: hosted Autodesk now supports nested folders, individual file selection and paged reads. See [Autodesk files](AUTODESK_FILES.md) for limits and acceptance checks; this supersedes earlier top-folder/25-total descriptions.
+
 # ORBIT tester checklist
 
 Updated 11 November 2026. Keep this list for local connector acceptance and the later deployment cutover.

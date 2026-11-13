@@ -188,6 +188,10 @@ public sealed class AutodeskOAuth(
             renewal_available = app != null
                 && (app.Data().S("mode") == "two_legged" || tokens.S("refresh_token").Length > 0),
             scope = "data:read",
+            folder_browser = true,
+            folder_page_size = AutodeskDocuments.PageSize,
+            folder_browse_limit = AutodeskDocuments.PageSize * AutodeskDocuments.MaxPages,
+            comparison_file_limit = AutodeskDocuments.MaxFiles,
         };
     }
 
@@ -650,6 +654,8 @@ public sealed class AutodeskOAuth(
         var generation = r.Version;
         var appVersion = app.Version;
         var kind = body.Required("kind", 20);
+        if (kind == "contents")
+            return await Browse(ctx, project, id, body);
         var hub = body.S("hub");
         var vendorProject = body.S("project");
         var page = body.N("page");
@@ -734,6 +740,10 @@ public sealed class AutodeskOAuth(
                     ["id"] = native,
                     ["label"] = label,
                     ["kind"] = kind,
+                    ["path"] =
+                        kind == "folders"
+                            ? new JsonArray(new JsonObject { ["id"] = native, ["label"] = label })
+                            : null,
                 }
             );
         }
@@ -789,6 +799,216 @@ public sealed class AutodeskOAuth(
         };
     }
 
+    static string ContentsParent(string hub, string project, string folder) =>
+        new JsonArray(hub, project, folder).ToJsonString();
+
+    static JsonArray PathOf(JsonObject folder) =>
+        folder["path"]?.DeepClone().AsArray()
+        ?? new JsonArray(new JsonObject { ["id"] = folder.S("id"), ["label"] = folder.S("label") });
+
+    async Task RegisterFolders(Record r, string hub, string project, IEnumerable<JsonObject> nodes)
+    {
+        var parent = Parent("folders", hub, project);
+        var id = ChoiceId(r.Id, "folders", parent);
+        var existing = await db.Find(r.Tenant, r.Project, "aps-choice", id);
+        var old = existing?.Data();
+        var values =
+            old != null && old.N("generation") == r.Version && old.N("expires") > Now
+                ? old["resources"]!.AsArray().Select(n => n!.DeepClone()).ToList()
+                : [];
+        foreach (var node in nodes)
+        {
+            values.RemoveAll(n => n.S("id") == node.S("id"));
+            values.Add(node.DeepClone());
+        }
+        if (
+            values.Count > 1000
+            || new JsonArray(values.Select(n => n!.DeepClone()).ToArray()).ToJsonString().Length
+                > 1_000_000
+        )
+            throw new ApiException(
+                409,
+                "Folder discovery reached its UAT bound. Save this folder and refresh before browsing further."
+            );
+        var data = new JsonObject
+        {
+            ["connection_id"] = r.Id,
+            ["generation"] = r.Version,
+            ["kind"] = "folders",
+            ["parent"] = parent,
+            ["resources"] = new JsonArray(values.ToArray()),
+            ["pages"] = new JsonArray(0),
+            ["expires"] = Now + 600,
+        };
+        if (existing == null)
+            db.Add(r.Tenant, r.Project, "aps-choice", id, data);
+        else
+            db.Change(existing, data);
+    }
+
+    async Task<JsonObject> KnownFolder(Record r, string hub, string project, string folder)
+    {
+        var c = r.Data()["configuration"]!;
+        if (c.S("hub") == hub && c.S("vendor_project") == project)
+        {
+            var path = c["folder_path"]?.AsArray();
+            var index = path?.Select((p, i) => (p, i)).FirstOrDefault(x => x.p.S("id") == folder);
+            if (path != null && index?.p != null)
+                return new()
+                {
+                    ["id"] = folder,
+                    ["label"] = index.Value.p.S("label"),
+                    ["kind"] = "folders",
+                    ["path"] = new JsonArray(
+                        path.Take(index.Value.i + 1).Select(p => p!.DeepClone()).ToArray()
+                    ),
+                };
+            if (c.S("folder") == folder)
+                return new()
+                {
+                    ["id"] = folder,
+                    ["label"] = c.S("folder_label", folder),
+                    ["kind"] = "folders",
+                };
+        }
+        return await Choice(r, "folders", Parent("folders", hub, project), folder);
+    }
+
+    public async Task<object> Browse(HttpContext ctx, string project, string id, JsonObject body)
+    {
+        var (who, r) = await Scoped(ctx, project, id, true);
+        FreshAccess(r);
+        var app = await App(r);
+        var generation = r.Version;
+        var appVersion = app.Version;
+        var hub = Identifier(body.Required("hub", 500));
+        var vendorProject = Identifier(body.Required("project", 500));
+        var folder = Identifier(body.Required("folder", 500));
+        var page = body.N("page");
+        if (page < 0 || page >= AutodeskDocuments.MaxPages)
+            throw new ApiException(422, "Choose a folder page between 0 and 39.");
+        var c = r.Data()["configuration"]!;
+        var savedScope = c.S("hub") == hub && c.S("vendor_project") == vendorProject;
+        if (!savedScope)
+        {
+            await Choice(r, "hubs", "", hub);
+            await Choice(r, "projects", hub, vendorProject);
+        }
+        var current = await KnownFolder(r, hub, vendorProject, folder);
+        var path = PathOf(current);
+        if (path.Count >= 64)
+            throw new ApiException(409, "This folder path exceeds the UAT depth limit.");
+        var parent = ContentsParent(hub, vendorProject, folder);
+        var cacheId = ChoiceId(id, "contents", parent);
+        var previous = await db.Find(who.Tenant, project, "aps-choice", cacheId);
+        bool PreviousValid(Record? record) =>
+            record != null
+            && record.Data().N("generation") == generation
+            && record.Data().N("expires") > Now
+            && record.Data()["pages"]?.AsArray().Any(p => p!.GetValue<long>() == page - 1) == true;
+        if (page > 0 && !PreviousValid(previous))
+            throw new ApiException(
+                409,
+                "Load folder pages in order. Reopen the folder if its list expired."
+            );
+        var response = await AutodeskDocuments.Page(
+            reader,
+            r,
+            vendorProject,
+            folder,
+            (int)page,
+            ctx.RequestAborted
+        );
+        var resources = new JsonArray();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var raw in response.Rows)
+        {
+            var item = AutodeskDocuments.Resource(raw, cipher.Unprotect(r.Secret!));
+            item.Remove("fields");
+            if (!seen.Add(item.S("id")))
+                throw new ApiException(
+                    502,
+                    "Autodesk returned duplicate entries on a folder page."
+                );
+            item["parent_folder"] = folder;
+            if (item.S("kind") == "folders")
+            {
+                if (path.Any(p => p.S("id") == item.S("id")))
+                    throw new ApiException(502, "Autodesk returned a cyclic folder reference.");
+                var child = path.DeepClone().AsArray();
+                child.Add(new JsonObject { ["id"] = item.S("id"), ["label"] = item.S("label") });
+                item["path"] = child;
+            }
+            resources.Add(item);
+        }
+        r = await Recheck(ctx, who, r, generation, appVersion);
+        previous = await db.Find(who.Tenant, project, "aps-choice", cacheId);
+        var all = resources.DeepClone().AsArray();
+        var pages = new JsonArray(page);
+        if (page > 0)
+        {
+            if (!PreviousValid(previous))
+                throw new ApiException(409, "The folder listing changed. Reopen this folder.");
+            all = new JsonArray(
+                previous!.Data()["resources"]!
+                    .AsArray()
+                    .Concat(resources)
+                    .GroupBy(x => x.S("id"))
+                    .Select(g => g.Last()!.DeepClone())
+                    .ToArray()
+            );
+            pages = previous.Data()["pages"]!.DeepClone().AsArray();
+            if (!pages.Any(p => p!.GetValue<long>() == page))
+                pages.Add(page);
+        }
+        if (all.Count > 1000 || all.ToJsonString().Length > 2_000_000)
+            throw new ApiException(
+                409,
+                "The folder listing reached its UAT bound. Choose a smaller folder or file selection."
+            );
+        var cached = new JsonObject
+        {
+            ["connection_id"] = id,
+            ["generation"] = generation,
+            ["kind"] = "contents",
+            ["parent"] = parent,
+            ["resources"] = all,
+            ["pages"] = pages,
+            ["expires"] = Now + 600,
+        };
+        if (previous == null)
+            db.Add(who.Tenant, project, "aps-choice", cacheId, cached);
+        else
+            db.Change(previous, cached);
+        await RegisterFolders(
+            r,
+            hub,
+            vendorProject,
+            new[] { current }.Concat(
+                resources.Where(x => x.S("kind") == "folders").Select(x => x!.AsObject())
+            )
+        );
+        db.Audit(who, "autodesk.folder_browsed", project, id);
+        await db.SaveChangesAsync();
+        return new
+        {
+            resources,
+            returned = resources.Count,
+            page,
+            has_more = response.More && page < AutodeskDocuments.MaxPages - 1,
+            browse_limit_reached = response.More && page == AutodeskDocuments.MaxPages - 1,
+            page_size = AutodeskDocuments.PageSize,
+            loaded_count = all.Count,
+            folder = new
+            {
+                id = folder,
+                label = current.S("label"),
+                path,
+            },
+            coverage = "Paged contents of this folder only. Open subfolders explicitly; no recursive project scan or file download.",
+        };
+    }
+
     public async Task<object> Select(HttpContext ctx, string project, string id, JsonObject body)
     {
         var (who, r) = await Scoped(ctx, project, id, true);
@@ -796,12 +1016,51 @@ public sealed class AutodeskOAuth(
         var hub = body.Required("hub", 500);
         var vendorProject = body.Required("project", 500);
         var folder = body.S("folder");
-        var h = await Choice(r, "hubs", "", hub);
-        var p = await Choice(r, "projects", hub, vendorProject);
-        var f =
-            folder.Length > 0
-                ? await Choice(r, "folders", Parent("folders", hub, vendorProject), folder)
-                : null;
+        var saved = r.Data()["configuration"]!;
+        var unchangedProject = saved.S("hub") == hub && saved.S("vendor_project") == vendorProject;
+        var h = unchangedProject
+            ? new JsonObject { ["id"] = hub, ["label"] = saved.S("hub_label", hub) }
+            : await Choice(r, "hubs", "", hub);
+        var p = unchangedProject
+            ? new JsonObject
+            {
+                ["id"] = vendorProject,
+                ["label"] = saved.S("project_label", vendorProject),
+            }
+            : await Choice(r, "projects", hub, vendorProject);
+        var f = folder.Length > 0 ? await KnownFolder(r, hub, vendorProject, folder) : null;
+        var files = AutodeskDocuments.Selected(body["file_ids"]);
+        var limit = body.N("document_limit", 25);
+        if (!new long[] { 25, 100, 250 }.Contains(limit) || files.Length > limit)
+            throw new ApiException(
+                422,
+                "Choose a file read limit of 25, 100 or 250 and keep the selection within it."
+            );
+        if (files.Length > 0 && folder.Length == 0)
+            throw new ApiException(422, "Choose a folder before selecting files.");
+        foreach (var file in files)
+        {
+            var prior =
+                unchangedProject
+                && saved.S("folder") == folder
+                && AutodeskDocuments
+                    .Selected(saved["file_ids"])
+                    .Contains(file, StringComparer.Ordinal);
+            if (!prior)
+            {
+                var entry = await Choice(
+                    r,
+                    "contents",
+                    ContentsParent(hub, vendorProject, folder),
+                    file
+                );
+                if (entry.S("kind") != "items")
+                    throw new ApiException(
+                        422,
+                        "Choose file entries, not folders, for a file selection."
+                    );
+            }
+        }
         var d = r.Data();
         var c = d["configuration"]!.AsObject();
         c["hub"] = hub;
@@ -809,7 +1068,11 @@ public sealed class AutodeskOAuth(
         c["folder"] = folder;
         c["hub_label"] = h.S("label");
         c["project_label"] = p.S("label");
-        c["folder_label"] = f?.S("label") ?? "";
+        c["folder_label"] =
+            f == null ? "" : string.Join(" / ", PathOf(f).Select(n => n.S("label")));
+        c["folder_path"] = f == null ? new JsonArray() : PathOf(f);
+        c["file_ids"] = new JsonArray(files.Select(v => (JsonNode)JsonValue.Create(v)!).ToArray());
+        c["document_limit"] = limit;
         d["last_result"] = null;
         db.Change(r, d);
         foreach (var choice in await db.List(r.Tenant, project, "aps-choice"))
@@ -823,6 +1086,8 @@ public sealed class AutodeskOAuth(
             hub = h.S("label"),
             project = p.S("label"),
             folder = f?.S("label"),
+            selected_files = files.Length,
+            document_limit = limit,
         };
     }
 
