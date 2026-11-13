@@ -1,13 +1,15 @@
-# Latest manual Azure UAT package: v0.16.0
+# Latest manual Azure UAT package: v0.17.0
 
-Download **[ORBIT-UAT-0.16.0-dotnet10-win-x86.zip](ORBIT-UAT-0.16.0-dotnet10-win-x86.zip)** using **Download raw file** or **View raw** while signed in to GitHub. GitHub's repository-wide Code → Download ZIP is source code, not a deployment package.
+Download **[ORBIT-UAT-0.17.0-dotnet10-win-x86.zip](ORBIT-UAT-0.17.0-dotnet10-win-x86.zip)** using **Download raw file** or **View raw** while signed in. Repository-wide Code → Download ZIP is source code, not a deployment package.
 
-Built from source `8eeb3ced00fa1f06289fe8245cd37bd215eda2bb`: native ASP.NET Core 10, self-contained Windows x86, branded frontend. Includes the completed native APS OAuth/PKCE, app-only auth, explicit renewal, named hub/project/folder discovery and scoped document read. All **32 native release tests** and the hosted Autodesk UI fixture passed. Live Autodesk customer consent remains to be confirmed. Other migration gaps remain documented and hosted RedEye writes stay disabled.
+Source `1dd1949f87e721243558158576ae37b36bd9df3c`: self-contained ASP.NET Core 10, Windows x86, branded frontend. The mapping editor now prioritises parameter A → parameter B, clear Save profile, in-place versioned Edit, deliberate Copy and confirmed Delete. Document matching and validation options are separate expandable controls. Deleted profiles retain historical reports and audit history.
 
-Upload this ZIP directly through Kudu ZIP deployment and restart OrbitPortal. Check `/api/health` reports **0.16.0**. Keep the existing Entra environment variables, Orbit encryption key, data path and key-ring path unchanged; do not delete the data directory. No new paid resource is required.
+**38 native tests**, **406 local-backend tests**, mapping-profile browser workflow, hosted Autodesk browser workflow and the local portal smoke checks passed. External services were simulated for these checks. Customer mapping UAT remains pending; the user previously confirmed live hosted Autodesk and RedEye connections. Other migration gaps remain documented; hosted RedEye writes stay disabled.
 
-Then follow [the hosted Autodesk setup steps](../docs/HOSTED_AUTODESK.md). For interactive consent, use an APS confidential web app that supports three-legged OAuth. Put the APS secret in ORBIT's Autodesk app settings, not the Entra environment variable.
+Upload this ZIP directly through Kudu ZIP deployment and restart OrbitPortal. Confirm `/api/health` reports **0.17.0**. Keep existing environment variables, encryption key, data path and key ring unchanged. Existing profiles remain available; no schema migration or new paid resource is required.
 
-SHA-256: `74d00092462eda67ce4d536bb020d99de5b0aec0b78d789fe6ebd42a27ea0015`.
+[Mapping profile workflow and acceptance checks](../docs/MAPPING_PROFILES.md).
 
-The previous v0.15 deployment ZIP remains available in Git history. This directory provides the current package so outdated builds are not accidentally selected.
+SHA-256: `9dcd96eb68badd2ba1fce3fb07535567dec2a4e1670adb5fac247f84675a3332`.
+
+Previous packages remain in Git history. This directory contains the current package to avoid selecting an outdated build.
