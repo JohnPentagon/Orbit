@@ -1,3 +1,5 @@
+> v0.20.0 adds optional [whole-folder and recursive comparisons](FOLDER_COMPARISONS.md), alongside the existing bounded sample mode. Follow that checklist for the new workflow.
+
 # Project dashboard — v0.19.0
 
 Open **Overview** after deploying v0.19.0. Choose the project at the top of the page. The dashboard uses saved connections and captured comparison evidence; no synthetic customer data is installed.

@@ -13,6 +13,10 @@ public sealed class FolderTransport : ApsTransport
     public const string Root = "urn:adsk.wipprod:fs.folder:co.root-a";
     public const string Structural = "urn:adsk.wipprod:fs.folder:co.structural";
     public const string Drawings = "urn:adsk.wipprod:fs.folder:co.drawings";
+    public int RootFileCount = 30;
+    public bool CycleFolder;
+    public bool DenySubfolder;
+    public bool EmptyContinuation;
     public bool RepeatPage;
     public bool RemoveFile;
     public Func<Task>? DuringPage;
@@ -45,11 +49,13 @@ public sealed class FolderTransport : ApsTransport
         Assert.Equal("25", query["page[limit]"]);
         var page = int.Parse(query["page[number]"]!);
         var folder = path["/data/v1/projects/b.project-0/folders/".Length..^"/contents".Length];
+        if (DenySubfolder && folder == Structural)
+            return new(HttpStatusCode.Forbidden) { Content = new StringContent("Access denied") };
         var entries = new List<JsonObject>();
         if (folder == Root)
         {
             entries.Add(Entry(Structural, "Structural", "folders"));
-            for (var n = 0; n < 30; n++)
+            for (var n = 0; n < RootFileCount; n++)
                 entries.Add(Entry("urn:fixture:root-file-" + n, $"Root-{n:000}.pdf", "items"));
         }
         else if (folder == Structural)
@@ -62,6 +68,8 @@ public sealed class FolderTransport : ApsTransport
         }
         else if (folder == Drawings)
         {
+            if (CycleFolder)
+                entries.Add(Entry(Root, "Cycle", "folders"));
             for (var n = 0; n < 60; n++)
                 if (!RemoveFile || n != 37)
                     entries.Add(Entry(File(n), $"GA-{n:000}.pdf", "items"));
@@ -72,7 +80,9 @@ public sealed class FolderTransport : ApsTransport
         var rows = new JsonArray(
             entries.Skip(effective * 25).Take(25).Select(n => (JsonNode)n).ToArray()
         );
-        var more = RepeatPage || entries.Count > (effective + 1) * 25;
+        if (EmptyContinuation && page > 0)
+            rows = new JsonArray();
+        var more = EmptyContinuation || RepeatPage || entries.Count > (effective + 1) * 25;
         return new(HttpStatusCode.OK)
         {
             Content = new StringContent(
@@ -364,5 +374,133 @@ public sealed class AutodeskFolderTests
                 await db.List("11111111-1111-1111-1111-111111111111", "uat-project", "snapshot")
             )
         );
+    }
+
+    async Task Whole(ApsScenario x, bool recursive = false)
+    {
+        await Roots(x);
+        await ApsScenario.Check(
+            await x.Client.PutAsJsonAsync(
+                x.Url + "/selection",
+                new
+                {
+                    hub = "b.hub-a",
+                    project = "b.project-0",
+                    folder = FolderTransport.Root,
+                    read_mode = "folder",
+                    include_subfolders = recursive,
+                    file_ids = Array.Empty<string>(),
+                    document_limit = 100,
+                }
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Whole_folder_reads_beyond_250_and_marks_saved_coverage_complete()
+    {
+        var vendor = new FolderTransport { RootFileCount = 301 };
+        await using var x = new ApsScenario(vendor);
+        await Whole(x);
+        var result = await x.Post(
+            "/api/projects/uat-project/analysis/capture",
+            new { kind = "read", id = x.Id }
+        );
+        var snapshot = result["snapshot"]!;
+        Assert.Equal(301, snapshot.N("record_count"));
+        Assert.True(snapshot["coverage"].B("complete"));
+        Assert.Equal(13, snapshot["coverage"].N("pages_read"));
+        Assert.Equal(1, snapshot["coverage"].N("folders_read"));
+        Assert.Equal("folder", snapshot["scope"].S("read_mode"));
+        Assert.Contains(
+            "orbit.relative_path",
+            snapshot["fields"]!.AsArray().Select(v => v!.ToString())
+        );
+    }
+
+    [Fact]
+    public async Task Recursive_scope_reads_all_descendants_without_folder_records()
+    {
+        var vendor = new FolderTransport();
+        await using var x = new ApsScenario(vendor);
+        await Whole(x, true);
+        var read = await x.Post(
+            x.Url.Replace("/autodesk", "/read"),
+            new { operation = "documents" }
+        );
+        Assert.Equal(151, read.N("returned"));
+        Assert.Equal(3, read.N("folders_read"));
+        Assert.Equal(8, read.N("pages_read"));
+        Assert.True(read.B("scope_complete"));
+        Assert.False(read.B("more_available"));
+        Assert.All(read["resources"]!.AsArray(), r => Assert.Equal("items", r.S("kind")));
+        Assert.Contains(read["resources"]!.AsArray(), r =>
+            r!["fields"].S("orbit.relative_path") == "Structural/GA drawings/GA-037.pdf"
+        );
+    }
+
+    [Theory]
+    [InlineData("denied")]
+    [InlineData("cycle")]
+    [InlineData("repeated")]
+    [InlineData("empty")]
+    [InlineData("too_large")]
+    public async Task Whole_scope_failures_never_store_partial_evidence(string failure)
+    {
+        var vendor = new FolderTransport
+        {
+            DenySubfolder = failure == "denied",
+            CycleFolder = failure == "cycle",
+            RepeatPage = failure == "repeated",
+            EmptyContinuation = failure == "empty",
+            RootFileCount = failure == "too_large" ? 5001 : 30,
+        };
+        await using var x = new ApsScenario(vendor);
+        await Whole(x, true);
+        var response = await x.Client.PostAsJsonAsync(
+            "/api/projects/uat-project/analysis/capture",
+            new { kind = "read", id = x.Id }
+        );
+        Assert.False(response.IsSuccessStatusCode);
+        Assert.Contains(
+            response.StatusCode,
+            new[]
+            {
+                HttpStatusCode.Conflict,
+                HttpStatusCode.UnprocessableEntity,
+                HttpStatusCode.BadGateway,
+            }
+        );
+        await x.Db(async db =>
+            Assert.Empty(
+                await db.List("11111111-1111-1111-1111-111111111111", "uat-project", "snapshot")
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Whole_scope_rejects_file_selection_and_recursive_sample_mode()
+    {
+        await using var x = new ApsScenario(new FolderTransport());
+        await Roots(x);
+        foreach (var mode in new[] { "folder", "sample", "unsupported" })
+        {
+            var response = await x.Client.PutAsJsonAsync(
+                x.Url + "/selection",
+                new
+                {
+                    hub = "b.hub-a",
+                    project = "b.project-0",
+                    folder = FolderTransport.Root,
+                    read_mode = mode,
+                    include_subfolders = true,
+                    file_ids = mode == "folder"
+                        ? new[] { FolderTransport.File(0) }
+                        : Array.Empty<string>(),
+                    document_limit = 100,
+                }
+            );
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        }
     }
 }

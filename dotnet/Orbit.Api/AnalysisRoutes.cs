@@ -316,6 +316,7 @@ public static class AnalysisRoutes
                         ["counts"] = d["report"]!["counts"]!.DeepClone(),
                         ["quality"] = d["report"]!["quality"]!.DeepClone(),
                         ["outcome"] = d["report"]!.S("outcome"),
+                        ["complete_selected_scopes"] = d["report"].B("complete_selected_scopes"),
                         ["created"] = r.Updated.ToString("O"),
                         ["stale"] = stale,
                         ["mapping_deleted"] = current == null,
@@ -534,7 +535,10 @@ public static class AnalysisRoutes
                         ["coverage"] = new JsonObject
                         {
                             ["description"] = result.S("coverage"),
-                            ["complete"] = false,
+                            ["complete"] =
+                                data.S("provider") == "forma" && result.B("scope_complete"),
+                            ["pages_read"] = result.N("pages_read"),
+                            ["folders_read"] = result.N("folders_read"),
                             ["notes"] = new JsonArray(),
                         },
                     }
@@ -756,6 +760,11 @@ public static class AnalysisRoutes
                         "bSDD reference changed; review and save the mapping again."
                     );
                 var report = Evaluate(samples[0].Data(), samples[1].Data(), config, schema?.Data());
+                var completeScope = samples.All(s => s.Data()["coverage"].B("complete"));
+                report["complete_selected_scopes"] = completeScope;
+                if (completeScope)
+                    report["scope"] =
+                        "Both selected folder scopes were fully paged through accessible vendor results. Missing counterparts refer to these selected scopes only. Reads are not atomic; permission-hidden content and concurrent changes cannot be detected. Metadata equality does not prove file-byte equality.";
                 report["mapping_name"] = config.S("name");
                 report["configuration"] = config.Copy();
                 report["warnings"] = new JsonArray(

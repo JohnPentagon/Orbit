@@ -339,4 +339,66 @@ public sealed class MappingProfileTests
         var context = await client.GetFromJsonAsync<JsonObject>(Root);
         Assert.Equal(2, context!["mappings"]!.AsArray().Count);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Folder_comparison_retains_scopes_keys_and_rules_and_labels_mixed_coverage(
+        bool bothComplete
+    )
+    {
+        await using var factory = new Factory();
+        using var client = await Setup(factory);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrbitDb>();
+            foreach (var side in new[] { "a", "b" })
+            {
+                var snap = (await db.Find(Tenant, "uat-project", "snapshot", side + "-sample"))!;
+                var data = snap.Data();
+                data["scope"] = new JsonObject
+                {
+                    ["folder"] = "folder-" + side,
+                    ["read_mode"] = "folder",
+                    ["include_subfolders"] = true,
+                };
+                data["coverage"]!["complete"] = side == "a" || bothComplete;
+                JsonObject Row(string id, string? key, string title) =>
+                    new()
+                    {
+                        ["id"] = id,
+                        ["values"] = new JsonObject { ["number"] = key, ["title"] = title },
+                    };
+                data["records"] = new JsonArray(
+                    Row(side + "-1", "D-001", side == "a" ? "Plan" : "Changed plan"),
+                    Row(side + "-2", side == "a" ? "A-ONLY" : "B-ONLY", "Unmatched"),
+                    Row(side + "-3", "DUPLICATE", "Duplicate"),
+                    Row(side + "-4", "DUPLICATE", "Duplicate"),
+                    Row(side + "-5", null, "Missing key")
+                );
+                db.Change(snap, data);
+            }
+            await db.SaveChangesAsync();
+        }
+        var saved = await Ok(await client.PostAsJsonAsync(Root + "/mappings", Body(true)));
+        var compared = await Ok(
+            await client.PostAsJsonAsync(
+                Root + "/mappings/" + saved.S("id") + "/compare",
+                new { expected_version = 1 }
+            )
+        );
+        var report = compared["report"]!;
+        Assert.Equal(bothComplete, report.B("complete_selected_scopes"));
+        Assert.Equal("folder-a", report["configuration"]!["source"]!["scope"].S("folder"));
+        Assert.Equal("folder-b", report["configuration"]!["target"]!["scope"].S("folder"));
+        Assert.Equal("number", report["configuration"].S("source_key"));
+        Assert.Equal("title", report["configuration"]!["rules"]![0].S("target_field"));
+        Assert.Equal(1, report["counts"].N("different"));
+        Assert.Equal(1, report["counts"].N("not_in_source_sample"));
+        Assert.Equal(1, report["counts"].N("not_in_target_sample"));
+        Assert.True(report["counts"].N("ambiguous") > 0);
+        Assert.NotEmpty(report["matching_issues"]!.AsArray());
+        Assert.True(report["source"]!["coverage"].B("complete"));
+        Assert.Equal(bothComplete, report["target"]!["coverage"].B("complete"));
+    }
 }

@@ -1031,6 +1031,16 @@ public sealed class AutodeskOAuth(
         var f = folder.Length > 0 ? await KnownFolder(r, hub, vendorProject, folder) : null;
         var files = AutodeskDocuments.Selected(body["file_ids"]);
         var limit = body.N("document_limit", 25);
+        var mode = body.S("read_mode", "sample");
+        if (mode is not ("sample" or "folder"))
+            throw new ApiException(422, "Choose sample or whole-folder read mode.");
+        if (mode == "folder" && (folder.Length == 0 || files.Length > 0))
+            throw new ApiException(
+                422,
+                "Whole-folder mode requires a folder and no individual-file selection."
+            );
+        if (body.B("include_subfolders") && mode != "folder")
+            throw new ApiException(422, "Include subfolders requires whole-folder mode.");
         if (!new long[] { 25, 100, 250 }.Contains(limit) || files.Length > limit)
             throw new ApiException(
                 422,
@@ -1073,6 +1083,12 @@ public sealed class AutodeskOAuth(
         c["folder_path"] = f == null ? new JsonArray() : PathOf(f);
         c["file_ids"] = new JsonArray(files.Select(v => (JsonNode)JsonValue.Create(v)!).ToArray());
         c["document_limit"] = limit;
+        // Preserve exact legacy sample scopes unless a mode is explicitly submitted.
+        if (body["read_mode"] != null || c["read_mode"] != null)
+        {
+            c["read_mode"] = mode;
+            c["include_subfolders"] = mode == "folder" && body.B("include_subfolders");
+        }
         d["last_result"] = null;
         db.Change(r, d);
         foreach (var choice in await db.List(r.Tenant, project, "aps-choice"))

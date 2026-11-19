@@ -1,8 +1,9 @@
+using System.Text;
 using System.Text.Json.Nodes;
 
 namespace Orbit.Api;
 
-/// <summary>Fixed-endpoint, paged reads of one authorised folder; no recursion or downloads.</summary>
+/// <summary>Fixed-endpoint folder metadata reads with explicit sample or complete-scope coverage.</summary>
 public static class AutodeskDocuments
 {
     public const int PageSize = 25;
@@ -38,10 +39,11 @@ public static class AutodeskDocuments
         string project,
         string folder,
         int page,
-        CancellationToken ct
+        CancellationToken ct,
+        bool scan = false
     )
     {
-        if (page < 0 || page >= MaxPages)
+        if (page < 0 || page >= (scan ? ScanPages : MaxPages))
             throw new ApiException(
                 422,
                 "Folder browsing supports up to 40 pages. Select a smaller folder if needed."
@@ -111,6 +113,149 @@ public static class AutodeskDocuments
         return values;
     }
 
+    public const int ScanFiles = 5000;
+    public const int ScanFolders = 500;
+    public const int ScanPages = 1000;
+    public const int ScanBytes = 16_000_000;
+
+    // Fail closed: a whole-folder scope never produces a partial snapshot.
+    static async Task<JsonObject> ReadFolder(
+        ConnectorService reader,
+        Record profile,
+        string secret,
+        CancellationToken ct
+    )
+    {
+        var config = profile.Data()["configuration"]!;
+        if (Selected(config["file_ids"]).Length > 0)
+            throw new ApiException(
+                409,
+                "Whole-folder mode cannot include an individual-file selection."
+            );
+        var project = Identifier(config.Required("vendor_project"));
+        var root = Identifier(config.Required("folder"));
+        var recursive = config.B("include_subfolders");
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(TimeSpan.FromSeconds(180));
+        var pending = new Queue<(string Id, string Path, int Depth)>();
+        pending.Enqueue((root, "", 0));
+        var folders = new HashSet<string>(StringComparer.Ordinal) { root };
+        var files = new HashSet<string>(StringComparer.Ordinal);
+        var resources = new JsonArray();
+        var pages = 0;
+        var visited = 0;
+        var excluded = 0;
+        var bytes = 0;
+        try
+        {
+            while (pending.Count > 0)
+            {
+                var current = pending.Dequeue();
+                visited++;
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                for (var page = 0; ; page++)
+                {
+                    if (++pages > ScanPages)
+                        throw new ApiException(
+                            422,
+                            "Whole-folder scan exceeds 1,000 pages. Choose a smaller folder; no partial comparison evidence was saved."
+                        );
+                    var result = await Page(
+                        reader,
+                        profile,
+                        project,
+                        current.Id,
+                        page,
+                        deadline.Token,
+                        scan: true
+                    );
+                    var added = 0;
+                    foreach (var row in result.Rows)
+                    {
+                        var item = Resource(row, secret);
+                        var id = item.S("id");
+                        if (!seen.Add(id))
+                            continue;
+                        added++;
+                        if (item.S("kind") == "folders")
+                        {
+                            if (!recursive)
+                            {
+                                excluded++;
+                                continue;
+                            }
+                            if (!folders.Add(id))
+                                throw new ApiException(
+                                    502,
+                                    "Autodesk returned a repeated or cyclic folder. No partial comparison evidence was saved."
+                                );
+                            if (folders.Count > ScanFolders || current.Depth >= 64)
+                                throw new ApiException(
+                                    422,
+                                    "Whole-folder scan exceeds 500 folders or 64 levels. Choose a smaller folder; no partial comparison evidence was saved."
+                                );
+                            pending.Enqueue(
+                                (id, current.Path + item.S("label") + "/", current.Depth + 1)
+                            );
+                            continue;
+                        }
+                        if (!files.Add(id))
+                            continue;
+                        if (files.Count > ScanFiles)
+                            throw new ApiException(
+                                422,
+                                "Whole-folder scan exceeds 5,000 files. Choose a smaller folder; no partial comparison evidence was saved."
+                            );
+                        item["fields"]!["orbit.relative_path"] = current.Path + item.S("label");
+                        bytes += Encoding.UTF8.GetByteCount(item.ToJsonString());
+                        if (bytes > ScanBytes)
+                            throw new ApiException(
+                                422,
+                                "Whole-folder metadata exceeds 16 MB. Choose a smaller folder; no partial comparison evidence was saved."
+                            );
+                        resources.Add(item);
+                    }
+                    if (result.More && added == 0)
+                        throw new ApiException(
+                            502,
+                            "Autodesk returned an empty or repeated continuation page. No partial comparison evidence was saved."
+                        );
+                    if (!result.More)
+                        break;
+                }
+            }
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            throw new ApiException(
+                409,
+                "Whole-folder scan timed out (180-second overall limit). Choose a smaller folder; no partial comparison evidence was saved."
+            );
+        }
+        return new()
+        {
+            ["operation"] = "documents",
+            ["resources"] = resources,
+            ["returned"] = resources.Count,
+            ["coverage"] =
+                $"Completed selected folder scope: {resources.Count} files across {visited} folders and {pages} pages. "
+                + (
+                    recursive
+                        ? "All returned descendant folders included. "
+                        : $"Direct contents only; {excluded} subfolder entries excluded. "
+                )
+                + "Vendor-reported accessible contents at read time; concurrent changes and permission-hidden content cannot be detected. Metadata only, no file bytes downloaded.",
+            ["scope_complete"] = true,
+            ["include_subfolders"] = recursive,
+            ["folders_read"] = visited,
+            ["pages_read"] = pages,
+            ["more_available"] = false,
+            ["synthetic"] = false,
+            ["imported"] = 0,
+            ["files_transferred"] = 0,
+        };
+    }
+
     public static async Task<JsonObject> Read(
         ConnectorService reader,
         Record profile,
@@ -118,6 +263,11 @@ public static class AutodeskDocuments
         CancellationToken ct
     )
     {
+        var mode = profile.Data()["configuration"].S("read_mode", "sample");
+        if (mode == "folder")
+            return await ReadFolder(reader, profile, secret, ct);
+        if (mode != "sample")
+            throw new ApiException(409, "Choose a supported Autodesk read mode.");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(TimeSpan.FromSeconds(90));
         ct = deadline.Token;

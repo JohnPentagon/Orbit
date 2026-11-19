@@ -1,3 +1,5 @@
+> v0.20.0 adds optional [whole-folder and recursive comparisons](FOLDER_COMPARISONS.md), alongside the existing bounded sample mode. Follow that checklist for the new workflow.
+
 # Autodesk folders and files — v0.18.0
 
 In Connections → Autodesk, open the connected project and load its top-level folders. Choose a starting folder, open subfolders, and use the breadcrumbs or Up one folder to return. File checkboxes select the exact documents for the next comparison sample. Save with Use selected files, or leave the selection empty and use the chosen folder.

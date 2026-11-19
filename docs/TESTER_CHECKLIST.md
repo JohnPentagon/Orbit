@@ -1,3 +1,5 @@
+> v0.20.0 adds optional [whole-folder and recursive comparisons](FOLDER_COMPARISONS.md), alongside the existing bounded sample mode. Follow that checklist for the new workflow.
+
 > v0.19.0: the project dashboard is ready for live acceptance. Follow [Dashboard UAT](DASHBOARD_UAT.md); customer dashboard checks remain pending.
 
 > v0.18.0: hosted Autodesk now supports nested folders, individual file selection and paged reads. See [Autodesk files](AUTODESK_FILES.md) for limits and acceptance checks; this supersedes earlier top-folder/25-total descriptions.
