@@ -1,15 +1,17 @@
-# Latest manual Azure UAT package: v0.19.0
+# Latest manual Azure UAT package: v0.20.0
 
-Download **[ORBIT-UAT-0.19.0-dotnet10-win-x86.zip](ORBIT-UAT-0.19.0-dotnet10-win-x86.zip)** using **Download raw file** or **View raw** while signed in. Repository-wide Code → Download ZIP is source code, not a deployment package.
+Download **[ORBIT-UAT-0.20.0-dotnet10-win-x86.zip](ORBIT-UAT-0.20.0-dotnet10-win-x86.zip)** using **Download raw file** or **View raw** while signed in. Repository-wide Code → Download ZIP is source code, not a deployment package.
 
-Source `d212dab6025c7abd2567aa9ee959d0b5904e21f7`: self-contained ASP.NET Core 10, Windows x86, branded frontend. Overview now opens the project dashboard: connection health, current comparison counts, different/unmatched records, property validation, bSDD reference, profiles needing attention and direct report links. Stale reports and deleted-profile history are excluded from current totals. Read checks are explicit and role-restricted; refreshing the dashboard reloads stored evidence only. Desktop and mobile layouts are included.
+Source `8649556bed43890c15ee7cc93656bc747ef3a7cf`: self-contained ASP.NET Core 10, Windows x86, branded frontend. Autodesk now supports whole-folder scopes with optional subfolders, paged reads beyond 250 files, relative-path matching and explicit complete-scope coverage. Save both connection scopes, matching keys and field mappings in a reusable profile. Duplicate/missing keys and unmatched records remain visible. A failed or oversized whole-folder scan saves no partial snapshot.
 
-**46 native tests** and four browser workflows passed: dashboard, Autodesk authentication, Autodesk folder/file selection and mapping profile lifecycle. External services were simulated. Customer live dashboard acceptance remains pending. Existing connector limits and hosted write restrictions are unchanged.
+Whole-folder UAT limits: 5,000 files, 500 folders, 1,000 pages, 64 levels, 16 MB metadata and 180 seconds. Completion refers only to vendor-reported accessible contents at read time; permission-hidden data and concurrent changes are not detectable. RedEye retains its five-artefact metadata sample; full RedEye group/register and Meridian folder scans are not implemented. Mixed coverage is labelled accordingly. Platform writes and file transfers are unchanged.
 
-Upload this ZIP through the existing Kudu ZIP deployment and restart OrbitPortal. Confirm `/api/health` reports **0.19.0**, then open **Overview**. Retain all existing environment variables, encryption key, data path, key ring and credentials. No database migration, new Azure resource or additional setting is needed.
+**56 native tests** and five browser workflows passed using simulated services. Customer live folder acceptance remains pending.
 
-[Dashboard workflow and customer acceptance checklist](../docs/DASHBOARD_UAT.md).
+Upload this ZIP through the existing Kudu ZIP deployment and restart OrbitPortal. Confirm `/api/health` reports **0.20.0**. Retain all existing environment variables, encryption key, data path, key ring and credentials. No new Azure resources or settings are needed.
 
-SHA-256: `e7e6ca699860e406a87a3b0c34d17c288654f28914378c6eaa70317130727014`.
+[Folder comparison instructions and customer checklist](../docs/FOLDER_COMPARISONS.md).
+
+SHA-256: `5a7ed7b84c46f9e6cf084278052601c668ac12544b1a10da20878326cab46018`.
 
 Previous packages remain in Git history. This directory contains the current package to avoid selecting an outdated build.
