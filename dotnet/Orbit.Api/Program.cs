@@ -141,10 +141,20 @@ builder
     .Services.AddHttpClient("vendor", c =>
     {
         c.Timeout = TimeSpan.FromSeconds(25);
-        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.20.0");
+        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.21.0");
     })
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<ConnectorService>();
+builder
+    .Services.AddHttpClient("transfer", c =>
+    {
+        c.Timeout = TimeSpan.FromSeconds(120);
+        c.DefaultRequestHeaders.UserAgent.ParseAdd("ORBIT/0.21.0");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Logging.AddFilter("System.Net.Http.HttpClient.transfer", LogLevel.None);
+builder.Services.AddScoped<TransferVendor>();
+builder.Services.AddScoped<TransferRoutes>();
 builder.Services.AddScoped<AutodeskOAuth>();
 var app = builder.Build();
 var fileUat = string.Equals(
@@ -256,7 +266,7 @@ app.MapGet("/api/health", () => new
     {
         status = "ok",
         mode = "hosted-workspace",
-        version = "0.20.0",
+        version = "0.21.0",
         runtime = "ASP.NET Core 10",
     });
 app.MapGet("/api/readiness", async (OrbitDb db) =>
@@ -313,6 +323,7 @@ WorkspaceRoutes.Map(app);
 ConnectionRoutes.Map(app);
 BsddRoutes.Map(app);
 AnalysisRoutes.Map(app);
+TransferRoutes.Map(app);
 RedEyeRoutes.Map(app);
 AutodeskOAuth.Map(app);
 app.Map("/api/{**path}", () =>

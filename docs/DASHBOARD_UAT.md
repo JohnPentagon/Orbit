@@ -1,3 +1,5 @@
+> v0.21.0 adds the [Autodesk → RedEye file transfer UAT workflow](FILE_TRANSFERS.md). Execution is disabled until `Orbit__EnableFileTransfers=true`; live acceptance is pending.
+
 > v0.20.0 adds optional [whole-folder and recursive comparisons](FOLDER_COMPARISONS.md), alongside the existing bounded sample mode. Follow that checklist for the new workflow.
 
 # Project dashboard — v0.19.0
